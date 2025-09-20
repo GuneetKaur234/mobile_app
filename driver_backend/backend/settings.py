@@ -16,8 +16,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security
 # ----------------------------
 SECRET_KEY = 'django-insecure-$j056hcp9i!94ebl_v=vf%p_fkjyxltibcmi16z2+(6&tz^!6a'
-DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2']  # Android emulator
+DEBUG = False
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2','mobile-app-gpehf7f5c4h9cre6.canadacentral-01.azurewebsites.net']  # Android emulator
 
 # ----------------------------
 # Applications
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -125,3 +126,5 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute=0, hour='10,18'),  # 10 AM & 6 PM local time
     },
 }
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
