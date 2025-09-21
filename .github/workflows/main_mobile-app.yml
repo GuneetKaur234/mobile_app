@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: List repo files (for debugging)
-        run: ls -R mobile_app
+      - name: List repo files (debug)
+        run: ls -R
 
       - name: Set up Python version
         uses: actions/setup-python@v5
@@ -24,26 +24,26 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r mobile_app/driver_backend/requirements.txt
+        run: pip install -r driver_backend/requirements.txt
 
       - name: Run Django migrations
-        run: python mobile_app/driver_backend/manage.py migrate --noinput
+        run: python driver_backend/manage.py migrate --noinput
 
       - name: Prepare files for deployment
         run: |
           mkdir -p site/wwwroot
           # Copy driver_backend folder
-          cp -r mobile_app/driver_backend site/wwwroot/
+          cp -r driver_backend site/wwwroot/
           # Copy manage.py
-          cp mobile_app/driver_backend/manage.py site/wwwroot/
+          cp driver_backend/manage.py site/wwwroot/
           # Copy media folder if exists
-          cp -r mobile_app/driver_backend/media site/wwwroot/ || true
+          cp -r driver_backend/media site/wwwroot/ || true
           # Copy db.sqlite3 if exists
-          cp mobile_app/driver_backend/db.sqlite3 site/wwwroot/ || true
+          cp driver_backend/db.sqlite3 site/wwwroot/ || true
           # Copy requirements.txt
-          cp mobile_app/driver_backend/requirements.txt site/wwwroot/
+          cp driver_backend/requirements.txt site/wwwroot/
           # Copy settings.py
-          cp mobile_app/driver_backend/settings.py site/wwwroot/driver_backend/
+          cp driver_backend/settings.py site/wwwroot/driver_backend/
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
