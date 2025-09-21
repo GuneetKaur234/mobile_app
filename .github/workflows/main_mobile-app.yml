@@ -27,9 +27,13 @@ jobs:
         run: |
           # Create wwwroot
           mkdir -p wwwroot
-          # Copy project files into wwwroot
-          cp -r driver_backend/* wwwroot/
-          # Ensure media and db.sqlite3 are copied if they exist
+
+          # If output.tar.gz exists, extract it into wwwroot
+          if [ -f driver_backend/output.tar.gz ]; then
+            tar -xzf driver_backend/output.tar.gz -C wwwroot
+          fi
+
+          # Copy media and db.sqlite3 if they exist
           cp -r driver_backend/media wwwroot/ || true
           cp driver_backend/db.sqlite3 wwwroot/ || true
 
