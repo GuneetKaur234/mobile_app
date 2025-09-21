@@ -15,6 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: List repo files (for debugging)
+        run: ls -R mobile_app
+
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
@@ -22,55 +25,25 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r mobile_app/driver_backend/requirements.txt
-        
+
       - name: Run Django migrations
         run: python mobile_app/driver_backend/manage.py migrate --noinput
 
       - name: Prepare files for deployment
         run: |
           mkdir -p site/wwwroot
-
+          # Copy driver_backend folder
+          cp -r mobile_app/driver_backend site/wwwroot/
           # Copy manage.py
-          if [ -f mobile_app/driver_backend/manage.py ]; then
-            cp mobile_app/driver_backend/manage.py site/wwwroot/
-          fi
-
+          cp mobile_app/driver_backend/manage.py site/wwwroot/
+          # Copy media folder if exists
+          cp -r mobile_app/driver_backend/media site/wwwroot/ || true
+          # Copy db.sqlite3 if exists
+          cp mobile_app/driver_backend/db.sqlite3 site/wwwroot/ || true
           # Copy requirements.txt
-          if [ -f mobile_app/driver_backend/requirements.txt ]; then
-            cp mobile_app/driver_backend/requirements.txt site/wwwroot/
-          fi
-
-          # Copy db.sqlite3
-          if [ -f mobile_app/driver_backend/db.sqlite3 ]; then
-            cp mobile_app/driver_backend/db.sqlite3 site/wwwroot/
-          fi
-
-          # Copy media folder
-          if [ -d mobile_app/driver_backend/media ]; then
-            cp -r mobile_app/driver_backend/media site/wwwroot/
-          fi
-
-          # Copy driver_uploads folder inside media
-          if [ -d mobile_app/driver_backend/media/driver_uploads ]; then
-            mkdir -p site/wwwroot/media
-            cp -r mobile_app/driver_backend/media/driver_uploads site/wwwroot/media/
-          fi
-
-          # Copy driver app folder
-          if [ -d mobile_app/driver_backend/driver ]; then
-            cp -r mobile_app/driver_backend/driver site/wwwroot/
-          fi
-
-          # Copy backend app folder
-          if [ -d mobile_app/driver_backend/backend ]; then
-            cp -r mobile_app/driver_backend/backend site/wwwroot/
-          fi
-
+          cp mobile_app/driver_backend/requirements.txt site/wwwroot/
           # Copy settings.py
-          if [ -f mobile_app/driver_backend/settings.py ]; then
-            mkdir -p site/wwwroot/driver_backend
-            cp mobile_app/driver_backend/settings.py site/wwwroot/driver_backend/
-          fi
+          cp mobile_app/driver_backend/settings.py site/wwwroot/driver_backend/
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
