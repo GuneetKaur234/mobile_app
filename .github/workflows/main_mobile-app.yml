@@ -1,7 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
 name: Build and deploy Python app to Azure Web App - Mobile-app
 
 on:
@@ -14,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -30,22 +26,27 @@ jobs:
       - name: Run Django migrations
         run: python driver_backend/manage.py migrate --noinput
 
-      - name: Prepare deployment artifact
+      - name: Prepare files for deployment
         run: |
-          mkdir -p deploy_wwwroot
-          # Copy only required folders/files
-          cp -r driver_backend deploy_wwwroot/
-          cp manage.py deploy_wwwroot/
-          cp -r media deploy_wwwroot/ || true
-          cp db.sqlite3 deploy_wwwroot/ || true
-          cp driver_backend/settings.py deploy_wwwroot/driver_backend/
-          cp requirements.txt deploy_wwwroot/
+          mkdir -p site/wwwroot
+          # Copy driver_backend folder
+          cp -r driver_backend site/wwwroot/
+          # Copy manage.py
+          cp driver_backend/manage.py site/wwwroot/
+          # Copy media folder if exists
+          cp -r media site/wwwroot/ || true
+          # Copy db.sqlite3 if exists
+          cp db.sqlite3 site/wwwroot/ || true
+          # Copy requirements.txt
+          cp driver_backend/requirements.txt site/wwwroot/
+          # Copy settings.py
+          cp driver_backend/settings.py site/wwwroot/driver_backend/
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: deploy_wwwroot/
+          path: site/wwwroot/
 
   deploy:
     runs-on: ubuntu-latest
