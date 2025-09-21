@@ -29,21 +29,22 @@ jobs:
       - name: Run Django migrations
         run: python driver_backend/manage.py migrate --noinput
 
-      - name: Prepare files for deployment
-        run: |
-          mkdir -p site/wwwroot
-          # Copy driver_backend folder
-          cp -r driver_backend site/wwwroot/
-          # Copy manage.py
-          cp driver_backend/manage.py site/wwwroot/
-          # Copy media folder if exists
-          cp -r driver_backend/media site/wwwroot/ || true
-          # Copy db.sqlite3 if exists
-          cp driver_backend/db.sqlite3 site/wwwroot/ || true
-          # Copy requirements.txt
-          cp driver_backend/requirements.txt site/wwwroot/
-          # Copy settings.py
-          cp driver_backend/settings.py site/wwwroot/driver_backend/
+- name: Prepare files for deployment
+  run: |
+    mkdir -p site/wwwroot
+    # Copy driver_backend folder
+    cp -r driver_backend site/wwwroot/
+    # Copy manage.py
+    cp driver_backend/manage.py site/wwwroot/
+    # Copy media folder if exists
+    cp -r driver_backend/media site/wwwroot/ || true
+    # Copy db.sqlite3 if exists
+    cp driver_backend/db.sqlite3 site/wwwroot/ || true
+    # Copy requirements.txt
+    cp driver_backend/requirements.txt site/wwwroot/
+    # Copy settings.py from backend folder
+    cp driver_backend/backend/settings.py site/wwwroot/driver_backend/backend/
+
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
@@ -68,3 +69,4 @@ jobs:
           app-name: 'Mobile-app'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_989C1ECBEAAE4FEE84D13C8271357F21 }}
+
