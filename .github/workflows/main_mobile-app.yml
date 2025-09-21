@@ -14,7 +14,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # This is required for actions/checkout
+      contents: read # Required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -30,13 +30,22 @@ jobs:
       - name: Run Django migrations
         run: python driver_backend/manage.py migrate --noinput
 
-      - name: Upload artifact for deployment jobs
+      - name: Prepare deployment artifact
+        run: |
+          mkdir -p deploy_wwwroot
+          # Copy only required folders/files
+          cp -r driver_backend deploy_wwwroot/
+          cp manage.py deploy_wwwroot/
+          cp -r media deploy_wwwroot/ || true
+          cp db.sqlite3 deploy_wwwroot/ || true
+          cp driver_backend/settings.py deploy_wwwroot/driver_backend/
+          cp requirements.txt deploy_wwwroot/
+
+      - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            .
-            !venv/
+          path: deploy_wwwroot/
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,19 +56,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python-app
-
-      - name: Extract required folders/files
-        run: |
-          mkdir -p wwwroot
-          # Extract essential folders/files in one command
-          tar -xzf output.tar.gz -C wwwroot \
-            output/driver_backend \
-            output/manage.py \
-            output/driver_backend/settings \
-            output/requirements.txt \
-            output/media \
-            output/db.sqlite3 \
-            --strip-components=1
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
