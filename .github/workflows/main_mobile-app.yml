@@ -7,16 +7,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: List repo files (debug)
-        run: ls -R
 
       - name: Set up Python version
         uses: actions/setup-python@v5
@@ -31,33 +25,18 @@ jobs:
 
       - name: Prepare files for deployment
         run: |
-          mkdir -p site/wwwroot
-          # Copy all contents of driver_backend into wwwroot
-          cp -r driver_backend/* site/wwwroot/
-          # Ensure media folder and db.sqlite3 are copied if they exist
-          cp -r driver_backend/media site/wwwroot/ || true
-          cp driver_backend/db.sqlite3 site/wwwroot/ || true
+          # Create wwwroot
+          mkdir -p wwwroot
+          # Copy project files into wwwroot
+          cp -r driver_backend/* wwwroot/
+          # Ensure media and db.sqlite3 are copied if they exist
+          cp -r driver_backend/media wwwroot/ || true
+          cp driver_backend/db.sqlite3 wwwroot/ || true
 
-      - name: Upload artifact for deployment
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-app
-          path: site/wwwroot/
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: python-app
-
-      - name: 'Deploy to Azure Web App'
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
           app-name: 'Mobile-app'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_989C1ECBEAAE4FEE84D13C8271357F21 }}
+          package: ./wwwroot
