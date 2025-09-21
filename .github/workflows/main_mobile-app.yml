@@ -48,6 +48,19 @@ jobs:
         with:
           name: python-app
 
+      - name: Extract required folders/files
+        run: |
+          mkdir -p wwwroot
+          # Extract essential folders/files in one command
+          tar -xzf output.tar.gz -C wwwroot \
+            output/driver_backend \
+            output/manage.py \
+            output/driver_backend/settings \
+            output/requirements.txt \
+            output/media \
+            output/db.sqlite3 \
+            --strip-components=1
+
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
