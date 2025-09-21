@@ -28,12 +28,23 @@ jobs:
           # Create wwwroot
           mkdir -p wwwroot
 
-          # If output.tar.gz exists, extract it into wwwroot
+          # Copy manage.py and requirements.txt to root of wwwroot
+          cp driver_backend/manage.py wwwroot/
+          cp driver_backend/requirements.txt wwwroot/
+
+          # Copy backend folder (wsgi.py) into wwwroot/backend
+          mkdir -p wwwroot/backend
+          cp driver_backend/backend/wsgi.py wwwroot/backend/
+
+          # Copy driver app folder
+          cp -r driver_backend/driver wwwroot/
+
+          # Extract output.tar.gz if it exists
           if [ -f driver_backend/output.tar.gz ]; then
             tar -xzf driver_backend/output.tar.gz -C wwwroot
           fi
 
-          # Copy media and db.sqlite3 if they exist
+          # Copy media folder and db.sqlite3 if they exist
           cp -r driver_backend/media wwwroot/ || true
           cp driver_backend/db.sqlite3 wwwroot/ || true
 
