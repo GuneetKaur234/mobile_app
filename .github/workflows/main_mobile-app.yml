@@ -9,45 +9,59 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ Checkout repo
       - uses: actions/checkout@v4
 
-      - name: Set up Python version
+      # 2️⃣ Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: pip install -r driver_backend/requirements.txt
 
+      # 4️⃣ Run Django migrations
       - name: Run Django migrations
         run: python driver_backend/manage.py migrate --noinput
 
-      - name: Prepare files for deployment
+      # 5️⃣ Prepare deployment package
+      - name: Prepare wwwroot for Azure
         run: |
-          # Create wwwroot
+          # Clean and create wwwroot
+          rm -rf wwwroot
           mkdir -p wwwroot
 
-          # Copy manage.py and requirements.txt to root of wwwroot
+          # Copy necessary Django files
           cp driver_backend/manage.py wwwroot/
           cp driver_backend/requirements.txt wwwroot/
 
-          # Copy backend folder (wsgi.py) into wwwroot/backend
+          # Copy backend wsgi.py
           mkdir -p wwwroot/backend
           cp driver_backend/backend/wsgi.py wwwroot/backend/
 
-          # Copy driver app folder
+          # Copy Django apps
           cp -r driver_backend/driver wwwroot/
 
-          # Extract output.tar.gz if it exists
+          # Copy media folder if it exists
+          if [ -d driver_backend/media ]; then
+            cp -r driver_backend/media wwwroot/
+          fi
+
+          # Copy SQLite DB if it exists
+          if [ -f driver_backend/db.sqlite3 ]; then
+            cp driver_backend/db.sqlite3 wwwroot/
+          fi
+
+          # Extract output.tar.gz automatically if it exists
           if [ -f driver_backend/output.tar.gz ]; then
             tar -xzf driver_backend/output.tar.gz -C wwwroot
           fi
 
-          # Copy media folder and db.sqlite3 if they exist
-          cp -r driver_backend/media wwwroot/ || true
-          cp driver_backend/db.sqlite3 wwwroot/ || true
-
+      # 6️⃣ Deploy to Azure
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
