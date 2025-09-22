@@ -7,12 +7,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       # 1️⃣ Checkout repo
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # 2️⃣ Set up Python
       - name: Set up Python
@@ -22,50 +29,68 @@ jobs:
 
       # 3️⃣ Install dependencies
       - name: Install dependencies
-        run: pip install -r driver_backend/requirements.txt
-
-      # 4️⃣ Run Django migrations
-      - name: Run Django migrations
-        run: python driver_backend/manage.py migrate --noinput
-
-      # 5️⃣ Prepare deployment package
-      - name: Prepare wwwroot for Azure
         run: |
-          # Clean and create wwwroot
-          rm -rf wwwroot
-          mkdir -p wwwroot
+          python -m pip install --upgrade pip
+          pip install -r driver_backend/requirements.txt
 
-          # Copy necessary Django files
-          cp driver_backend/manage.py wwwroot/
-          cp driver_backend/requirements.txt wwwroot/
-
-          # Copy backend wsgi.py
-          mkdir -p wwwroot/backend
-          cp driver_backend/backend/wsgi.py wwwroot/backend/
-
-          # Copy Django apps
-          cp -r driver_backend/driver wwwroot/
-
-          # Copy media folder if it exists
-          if [ -d driver_backend/media ]; then
-            cp -r driver_backend/media wwwroot/
-          fi
-
+      # 4️⃣ Prepare release folder
+      - name: Prepare release folder
+        run: |
+          rm -rf release
+          mkdir release
+          # Copy the backend project (settings, urls, wsgi)
+          cp -r driver_backend/backend release/
+          # Copy your Django app
+          cp -r driver_backend/driver release/
+          # Copy manage.py and requirements
+          cp driver_backend/manage.py driver_backend/requirements.txt release/
           # Copy SQLite DB if it exists
           if [ -f driver_backend/db.sqlite3 ]; then
-            cp driver_backend/db.sqlite3 wwwroot/
+            cp driver_backend/db.sqlite3 release/
           fi
-
-          # Extract output.tar.gz automatically if it exists
+          # Copy media folder if it exists
+          if [ -d driver_backend/media ]; then
+            cp -r driver_backend/media release/
+          fi
+          # Extract output.tar.gz if present
           if [ -f driver_backend/output.tar.gz ]; then
-            tar -xzf driver_backend/output.tar.gz -C wwwroot
+            tar -xzf driver_backend/output.tar.gz -C release
           fi
 
-      # 6️⃣ Deploy to Azure
+      # 5️⃣ Collect static files
+      - name: Run collectstatic
+        run: |
+          export DJANGO_SETTINGS_MODULE=backend.settings
+          cd release
+          python manage.py collectstatic --noinput
+
+      # 6️⃣ Run makemigrations
+      - name: Run makemigrations
+        run: |
+          export DJANGO_SETTINGS_MODULE=backend.settings
+          cd release
+          python manage.py makemigrations --noinput || echo "No migrations"
+
+      # 7️⃣ Run migrate
+      - name: Run migrate
+        run: |
+          export DJANGO_SETTINGS_MODULE=backend.settings
+          cd release
+          python manage.py migrate --noinput
+
+      # 8️⃣ Login to Azure (✅ added your client-id, tenant-id, subscription-id)
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
+
+      # 9️⃣ Deploy to Azure
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
         with:
           app-name: 'Mobile-app'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_989C1ECBEAAE4FEE84D13C8271357F21 }}
-          package: ./wwwroot
+          package: ./release
