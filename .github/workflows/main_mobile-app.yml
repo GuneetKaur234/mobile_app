@@ -38,18 +38,8 @@ jobs:
         run: |
           rm -rf release
           mkdir release
-          # Copy Django project files to release
-          cp -r driver_backend/backend release/
-          cp -r driver_backend/driver release/
-          cp driver_backend/manage.py driver_backend/requirements.txt release/
-          # Copy optional SQLite DB
-          if [ -f driver_backend/db.sqlite3 ]; then
-            cp driver_backend/db.sqlite3 release/
-          fi
-          # Copy media folder if exists
-          if [ -d driver_backend/media ]; then
-            cp -r driver_backend/media release/
-          fi
+          # Copy entire driver_backend folder to release
+          cp -r driver_backend release/
           # Extract any tarball contents directly into release
           if [ -f driver_backend/output.tar.gz ]; then
             tar -xzf driver_backend/output.tar.gz -C release
@@ -58,22 +48,22 @@ jobs:
       # 5️⃣ Collect static files
       - name: Run collectstatic
         run: |
-          export DJANGO_SETTINGS_MODULE=backend.settings
-          cd release
+          export DJANGO_SETTINGS_MODULE=driver_backend.backend.settings
+          cd release/driver_backend
           python manage.py collectstatic --noinput
 
       # 6️⃣ Run makemigrations
       - name: Run makemigrations
         run: |
-          export DJANGO_SETTINGS_MODULE=backend.settings
-          cd release
+          export DJANGO_SETTINGS_MODULE=driver_backend.backend.settings
+          cd release/driver_backend
           python manage.py makemigrations --noinput || echo "No migrations"
 
       # 7️⃣ Run migrate
       - name: Run migrate
         run: |
-          export DJANGO_SETTINGS_MODULE=backend.settings
-          cd release
+          export DJANGO_SETTINGS_MODULE=driver_backend.backend.settings
+          cd release/driver_backend
           python manage.py migrate --noinput
 
       # 8️⃣ Login to Azure
@@ -92,4 +82,4 @@ jobs:
           app-name: 'Mobile-app'
           slot-name: 'Production'
           package: ./release
-          clean: true        # ✅ Ensures old files like hostingstart.html are removed
+          clean: true   # ✅ removes old files like hostingstart.html
