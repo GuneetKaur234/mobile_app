@@ -38,21 +38,19 @@ jobs:
         run: |
           rm -rf release
           mkdir release
-          # Copy the backend project (settings, urls, wsgi)
+          # Copy Django project files to release
           cp -r driver_backend/backend release/
-          # Copy your Django app
           cp -r driver_backend/driver release/
-          # Copy manage.py and requirements
           cp driver_backend/manage.py driver_backend/requirements.txt release/
-          # Copy SQLite DB if it exists
+          # Copy optional SQLite DB
           if [ -f driver_backend/db.sqlite3 ]; then
             cp driver_backend/db.sqlite3 release/
           fi
-          # Copy media folder if it exists
+          # Copy media folder if exists
           if [ -d driver_backend/media ]; then
             cp -r driver_backend/media release/
           fi
-          # Extract output.tar.gz if present
+          # Extract any tarball contents directly into release
           if [ -f driver_backend/output.tar.gz ]; then
             tar -xzf driver_backend/output.tar.gz -C release
           fi
@@ -78,7 +76,7 @@ jobs:
           cd release
           python manage.py migrate --noinput
 
-      # 8️⃣ Login to Azure (✅ added your client-id, tenant-id, subscription-id)
+      # 8️⃣ Login to Azure
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -86,7 +84,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
 
-      # 9️⃣ Deploy to Azure
+      # 9️⃣ Deploy to Azure Web App
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
@@ -94,5 +92,4 @@ jobs:
           app-name: 'Mobile-app'
           slot-name: 'Production'
           package: ./release
-
-
+          clean: true        # ✅ Ensures old files like hostingstart.html are removed
