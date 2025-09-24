@@ -19,6 +19,10 @@ SECRET_KEY = 'django-insecure-$j056hcp9i!94ebl_v=vf%p_fkjyxltibcmi16z2+(6&tz^!6a
 DEBUG = False
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2','mobile-app-gpehf7f5c4h9cre6.canadacentral-01.azurewebsites.net']  # Android emulator
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://mobile-app-gpehf7f5c4h9cre6.canadacentral-01.azurewebsites.net"
+]
+
 # ----------------------------
 # Applications
 # ----------------------------
@@ -128,4 +132,5 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 #}
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
