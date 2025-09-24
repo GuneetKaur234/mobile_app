@@ -38,21 +38,11 @@ jobs:
         run: |
           rm -rf release
           mkdir release
-          # Copy project files
-          cp -r backend release/
-          cp -r driver release/
-          cp manage.py requirements.txt release/
+          # Copy main project files directly to release
+          cp -r backend driver manage.py requirements.txt release/
           # Optional: DB + media
-          if [ -f db.sqlite3 ]; then
-            cp db.sqlite3 release/
-          fi
-          if [ -d media ]; then
-            cp -r media release/
-          fi
-          # Extract tarball if exists
-          if [ -f output.tar.gz ]; then
-            tar -xzf output.tar.gz -C release
-          fi
+          if [ -f db.sqlite3 ]; then cp db.sqlite3 release/; fi
+          if [ -d media ]; then cp -r media release/; fi
 
       # 5️⃣ Collect static files
       - name: Run collectstatic
