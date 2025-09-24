@@ -31,39 +31,48 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r driver_backend/requirements.txt
+          pip install -r requirements.txt
 
       # 4️⃣ Prepare release folder
       - name: Prepare release folder
         run: |
           rm -rf release
           mkdir release
-          # Copy entire driver_backend folder to release
-          cp -r driver_backend release/
-          # Extract any tarball contents directly into release
-          if [ -f driver_backend/output.tar.gz ]; then
-            tar -xzf driver_backend/output.tar.gz -C release
+          # Copy project files
+          cp -r backend release/
+          cp -r driver release/
+          cp manage.py requirements.txt release/
+          # Optional: DB + media
+          if [ -f db.sqlite3 ]; then
+            cp db.sqlite3 release/
+          fi
+          if [ -d media ]; then
+            cp -r media release/
+          fi
+          # Extract tarball if exists
+          if [ -f output.tar.gz ]; then
+            tar -xzf output.tar.gz -C release
           fi
 
       # 5️⃣ Collect static files
       - name: Run collectstatic
         run: |
-          export DJANGO_SETTINGS_MODULE=driver_backend.backend.settings
-          cd release/driver_backend
+          export DJANGO_SETTINGS_MODULE=backend.settings
+          cd release
           python manage.py collectstatic --noinput
 
       # 6️⃣ Run makemigrations
       - name: Run makemigrations
         run: |
-          export DJANGO_SETTINGS_MODULE=driver_backend.backend.settings
-          cd release/driver_backend
+          export DJANGO_SETTINGS_MODULE=backend.settings
+          cd release
           python manage.py makemigrations --noinput || echo "No migrations"
 
       # 7️⃣ Run migrate
       - name: Run migrate
         run: |
-          export DJANGO_SETTINGS_MODULE=driver_backend.backend.settings
-          cd release/driver_backend
+          export DJANGO_SETTINGS_MODULE=backend.settings
+          cd release
           python manage.py migrate --noinput
 
       # 8️⃣ Login to Azure
@@ -82,4 +91,4 @@ jobs:
           app-name: 'Mobile-app'
           slot-name: 'Production'
           package: ./release
-          clean: true   # ✅ removes old files like hostingstart.html
+          clean: true
