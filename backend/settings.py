@@ -133,4 +133,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+AZURE_MAPS_KEY = os.environ.get("AZURE_MAPS_KEY")
+
 
