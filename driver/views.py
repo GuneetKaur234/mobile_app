@@ -15,6 +15,7 @@ from django.utils import timezone
 
 import json
 import requests
+from decimal import Decimal
 
 from .models import (
     DriverProfile,
@@ -553,21 +554,16 @@ def update_driver_location(request):
         if not driver_id or latitude is None or longitude is None:
             return Response({"error": "driver_id, latitude, and longitude are required"}, status=400)
 
-        try:
-            driver = DriverProfile.objects.get(id=driver_id)
-        except DriverProfile.DoesNotExist:
-            return Response({"error": "Driver not found"}, status=404)
+        driver = DriverProfile.objects.get(id=driver_id)
 
-        latitude, longitude = float(latitude), float(longitude)
+        # Convert to Decimal for storage
+        latitude_dec, longitude_dec = Decimal(latitude), Decimal(longitude)
 
-        print(f"[DEBUG] Driver {driver_id} location: ({latitude}, {longitude})")
-
-        azure_key = settings.AZURE_MAPS_KEY
+        # Reverse geocode using Azure Maps
         address = "Unknown location"
-
         try:
             resp = requests.get(
-                f"https://atlas.microsoft.com/search/address/reverse/json?api-version=1.0&query={latitude},{longitude}&subscription-key={azure_key}",
+                f"https://atlas.microsoft.com/search/address/reverse/json?api-version=1.0&query={latitude},{longitude}&subscription-key={settings.AZURE_MAPS_KEY}",
                 timeout=5
             )
             resp.raise_for_status()
@@ -575,21 +571,29 @@ def update_driver_location(request):
             if data.get('addresses'):
                 address = data['addresses'][0]['address'].get('freeformAddress', address)
         except Exception:
-            pass
+            pass  # Keep address as "Unknown location" if Azure fails
 
+        # Save or update driver location
         DriverLocation.objects.update_or_create(
             license_number=driver.license_number,
             company_name=driver.company,
             defaults={
                 'driver': driver,
-                'latitude': latitude,
-                'longitude': longitude,
+                'latitude': latitude_dec,
+                'longitude': longitude_dec,
                 'address': address
             }
         )
 
-        return Response({"status": "success", "latitude": latitude, "longitude": longitude, "address": address}, status=200)
+        return Response({
+            "status": "success",
+            "latitude": latitude_dec,
+            "longitude": longitude_dec,
+            "address": address
+        }, status=200)
 
+    except DriverProfile.DoesNotExist:
+        return Response({"error": "Driver not found"}, status=404)
     except (TypeError, ValueError):
         return Response({"error": "Invalid latitude or longitude"}, status=400)
     except Exception as e:
@@ -976,3 +980,4 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
