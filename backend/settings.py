@@ -112,9 +112,16 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 CORS_ALLOW_ALL_ORIGINS = True
 
 # ----------------------------
-# Email
+# Email (Azure SMTP)
 # ----------------------------
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.office365.com')  # Azure / Microsoft 365 SMTP
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Your Azure email address
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Your Azure app password or email password
+DEFAULT_FROM_EMAIL = f"H&H Support <{os.getenv('EMAIL_HOST_USER')}>"
+
 
 # ----------------------------
 # Celery
@@ -134,5 +141,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 AZURE_MAPS_KEY = os.environ.get("AZURE_MAPS_KEY")
+
 
 
