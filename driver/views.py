@@ -685,6 +685,11 @@ def send_email_api(request, load_id, include_pod, email_type):
     try:
         load = DriverLoadInfo.objects.get(id=load_id)
 
+        # Fetch latest location for the driver
+        driver_location = DriverLocation.objects.filter(driver=load.driver).order_by('-id').first()
+        location_address = driver_location.address if driver_location else "Unknown location"
+
+
         # Automatically update pickup/delivery datetime and status
         now = timezone.now()
         if email_type.lower() == "pickup":
@@ -721,6 +726,7 @@ def send_email_api(request, load_id, include_pod, email_type):
             ("Delivery Notes", load.delivery_notes or ""),
             ("Pickup Date/Time", load.pickup_datetime),
             ("Delivery Date/Time", load.delivery_datetime),
+            ("Current Location", location_address),
         ]
 
         # Include pulp reason if present
@@ -730,8 +736,6 @@ def send_email_api(request, load_id, include_pod, email_type):
         # Include Reefer fields only if equipment_type is Reefer
         if getattr(load, "equipment_type", "").lower() == "reefer":
             rows.extend([
-                ("Reefer Picture", ", ".join([f.url for f in getattr(load, "reefer_files", [])])),
-                ("Pulp Picture", ", ".join([f.url for f in getattr(load, "pulp_files", [])])),
                 ("Reefer Temp (Set by Shipper)", getattr(load, "reefer_temp_shipper", "")),
                 ("Reefer Temp on BOL", getattr(load, "reefer_temp_bol", "")),
                 ("Temperature Unit", getattr(load, "reefer_temp_unit", "")),
@@ -980,4 +984,5 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
