@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'setup_screen.dart';
+import 'preferences_provider.dart'; 
+import 'package:provider/provider.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
   const LanguageSelectionScreen({super.key});
@@ -24,19 +26,30 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       return;
     }
 
+    // Save language to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('language', _selectedLanguage!);
+    await prefs.setString('languageCode', _selectedLanguage!);
 
+    // Update PreferencesProvider (this will rebuild MaterialApp with new locale)
+    if (!mounted) return;
+    final provider = Provider.of<PreferencesProvider>(context, listen: false);
+    await provider.setLanguage(_selectedLanguage!);
+
+    // Navigate to SetupScreen
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => SetupScreen(),
+        builder: (_) => const SetupScreen(),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<PreferencesProvider>(context);
+    _selectedLanguage ??= provider.languageCode;
+
     return Scaffold(
       backgroundColor: const Color(0xFF16213D),
       body: Center(
@@ -50,9 +63,11 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  "Select your language",
-                  style: TextStyle(
+                Text(
+                  provider.languageCode == 'fr'
+                      ? 'Sélectionnez votre langue'
+                      : 'Select your language',
+                  style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Colors.white),
@@ -73,8 +88,12 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'en', child: Text('English', style: TextStyle(color: Colors.white))),
-                    DropdownMenuItem(value: 'fr', child: Text('French', style: TextStyle(color: Colors.white))),
+                    DropdownMenuItem(
+                        value: 'en',
+                        child: Text('English', style: TextStyle(color: Colors.white))),
+                    DropdownMenuItem(
+                        value: 'fr',
+                        child: Text('French', style: TextStyle(color: Colors.white))),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -96,9 +115,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text(
-                      'Continue',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    child: Text(
+                      provider.languageCode == 'fr' ? 'Continuer' : 'Continue',
+                      style: const TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
                 ),

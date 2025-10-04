@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../preferences_provider.dart';
 import 'package:driver_app/screens/load_detail_steps/Settings.dart';
 import 'load_detail.dart'; // <-- import the new LoadDetailScreen
+import '../../main.dart';
+import '../../l10n/app_localizations.dart';
 
 class LatestLoadsScreen extends StatefulWidget {
   final int driverId;
@@ -25,6 +27,22 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
     _fetchLatestLoads();
   }
 
+    String localizedStatus(AppLocalizations loc, String? status) {
+    if (status == null || status.isEmpty) return '-';
+    switch (status.toLowerCase().replaceAll(' ', '_')) {
+      case 'pickup_pending':
+        return loc.pending;
+      case 'in_transit':
+        return loc.status_in_transit;
+      case 'pickup_completed':
+        return loc.status_pickup_completed;
+      case 'delivered':
+        return loc.status_delivered;
+      default:
+        return status; // fallback
+    }
+  }
+
   // Helper: Converts status string to Title Case
   String formatStatus(String? status) {
     if (status == null || status.isEmpty) return '-';
@@ -39,8 +57,8 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
   Future<void> _fetchLatestLoads() async {
     setState(() => _loading = true);
     try {
-      final url = Uri.parse(
-          'http://10.0.2.2:8000/api/driver/driver/get-latest-loads/${widget.driverId}/');
+      final url = Uri.parse('${baseUrl}get-latest-loads/${widget.driverId}/');
+
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -68,7 +86,7 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
   Future<void> _createNewLoad() async {
     setState(() => _loading = true);
     try {
-      final url = Uri.parse('http://10.0.2.2:8000/api/driver/driver/create-new-load/');
+      final url = Uri.parse('${baseUrl}create-new-load/');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -108,6 +126,7 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Provider.of<PreferencesProvider>(context);
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
@@ -122,7 +141,7 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Dashboard',
+              loc.dashboard,
               style: TextStyle(
                 color: theme.isDarkMode ? Colors.white : Colors.black,
               ),
@@ -153,7 +172,7 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
           : _loads.isEmpty
               ? Center(
                   child: Text(
-                    'No recent loads found.',
+                    loc.noRecentLoads, 
                     style: TextStyle(color: theme.isDarkMode ? Colors.white : Colors.black),
                   ),
                 )
@@ -164,7 +183,7 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
                     itemCount: _loads.length,
                     itemBuilder: (context, index) {
                       final load = _loads[index];
-                      final formattedStatus = formatStatus(load['status']); // <-- format here
+                      final formattedStatus = localizedStatus(loc, load['status']);// <-- format here
                       return Card(
                         color: theme.isDarkMode ? const Color(0xFF1F2F56) : Colors.white,
                         shape: RoundedRectangleBorder(
@@ -175,7 +194,7 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           title: Text(
-                            'Load: ${load['load_number'] ?? '-'}',
+                            '${loc.load}: ${load['load_number'] ?? '-'}',
                             style: TextStyle(
                               color: theme.isDarkMode ? Colors.white : Colors.black,
                               fontWeight: FontWeight.bold,
@@ -186,7 +205,7 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
                             children: [
                               const SizedBox(height: 4),
                               Text(
-                                'Customer: ${load['customer_name'] ?? '-'}',
+                                 '${loc.customer}: ${load['customer_name'] ?? '-'}',
                                 style: TextStyle(
                                   color: theme.isDarkMode ? Colors.white70 : Colors.black54,
                                   fontSize: 16,
@@ -194,7 +213,7 @@ class _LatestLoadsScreenState extends State<LatestLoadsScreen> {
                                 ),
                               ),
                               Text(
-                                'Status: $formattedStatus',
+                                '${loc.status}: $formattedStatus',
                                 style: TextStyle(
                                   color: (load['status']?.toLowerCase() == 'delivered')
                                       ? Colors.green

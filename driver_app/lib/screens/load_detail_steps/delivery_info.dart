@@ -7,7 +7,9 @@ import 'package:path/path.dart' as path;
 import 'TripCompletedScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:driver_app/screens/preferences_provider.dart';
-import 'horizontal_stepper.dart'; // stepper widget
+import 'horizontal_stepper.dart';
+import '../../main.dart';
+import '../../l10n/app_localizations.dart'; // <-- Import localization
 
 class DeliveryInfoScreen extends StatefulWidget {
   final int loadId;
@@ -44,8 +46,7 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
   Future<void> _fetchExistingDeliveryInfo() async {
     setState(() => _isLoading = true);
     try {
-      final uri = Uri.parse(
-          "http://10.0.2.2:8000/api/driver/driver/get-delivery-info/${widget.loadId}/");
+      final uri = Uri.parse("${baseUrl}get-delivery-info/${widget.loadId}/");
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -61,11 +62,11 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Failed to load delivery info")));
+            SnackBar(content: Text(AppLocalizations.of(context)!.failedToLoadDeliveryInfo)));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")));
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorLoadingDeliveryInfo(e.toString()))));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -81,7 +82,7 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error picking images: $e")));
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorPickingImages(e.toString()))));
     }
   }
 
@@ -103,7 +104,7 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("POD Files",
+        Text(AppLocalizations.of(context)!.podFiles,
             style: TextStyle(
                 color: isDarkMode ? Colors.white : Colors.black,
                 fontWeight: FontWeight.w500)),
@@ -114,8 +115,8 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
             onPressed: _pickFiles,
             icon: const Icon(Icons.upload_file),
             label: Text(_podNewFiles.isEmpty && _podExistingFiles.isEmpty
-                ? 'Upload'
-                : 'Add More Files'),
+                ? AppLocalizations.of(context)!.upload
+                : AppLocalizations.of(context)!.addMoreFiles),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2980B9),
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -178,7 +179,7 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
 
   Future<void> _saveDelivery() async {
     setState(() => _isSubmitting = true);
-    final uri = Uri.parse("http://10.0.2.2:8000/api/driver/driver/save-delivery-info/");
+    final uri = Uri.parse("${baseUrl}save-delivery-info/");
     final request = http.MultipartRequest('POST', uri);
 
     request.fields['load_id'] = widget.loadId.toString();
@@ -196,33 +197,35 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
       final responseStr = await streamedResponse.stream.bytesToString();
       if (streamedResponse.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Delivery info saved successfully')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.deliveryInfoSaved)),
         );
         setState(() => _podNewFiles.clear());
         await _fetchExistingDeliveryInfo();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error ${streamedResponse.statusCode}: $responseStr")));
+            SnackBar(content: Text("${AppLocalizations.of(context)!.error} ${streamedResponse.statusCode}: $responseStr")));
       }
     } catch (e) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Network error: $e")));
+          .showSnackBar(SnackBar(content: Text("${AppLocalizations.of(context)!.networkError}: $e")));
     } finally {
       setState(() => _isSubmitting = false);
     }
   }
 
   Future<void> _sendDeliveryEmail() async {
+    final loc = AppLocalizations.of(context)!;
+
     if (_deliveryNumberController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a Delivery Number")),
+        SnackBar(content: Text(loc.enterDeliveryNumber)),
       );
       return;
     }
 
     if (_podNewFiles.isEmpty && _podExistingFiles.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please upload at least one POD file")),
+        SnackBar(content: Text(loc.uploadAtLeastOnePod)),
       );
       return;
     }
@@ -230,14 +233,13 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
     await _saveDelivery();
 
     setState(() => _isSubmitting = true);
-    final uri = Uri.parse(
-        "http://10.0.2.2:8000/api/driver/driver/send-delivery-email/${widget.loadId}/");
+    final uri = Uri.parse("${baseUrl}send-delivery-email/${widget.loadId}/");
 
     try {
       final response = await http.post(uri);
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Delivery email sent successfully!")),
+          SnackBar(content: Text(loc.deliveryEmailSent)),
         );
 
         Navigator.pushReplacement(
@@ -248,12 +250,12 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error ${response.statusCode}: ${response.body}")),
+          SnackBar(content: Text("${loc.error} ${response.statusCode}: ${response.body}")),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Network error: $e")),
+        SnackBar(content: Text("${loc.networkError}: $e")),
       );
     } finally {
       setState(() => _isSubmitting = false);
@@ -264,114 +266,112 @@ class _DeliveryInfoScreenState extends State<DeliveryInfoScreen> {
   Widget build(BuildContext context) {
     final theme = Provider.of<PreferencesProvider>(context);
     final isDarkMode = theme.isDarkMode;
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF16213D) : const Color(0xFFF0F2F5),
       appBar: AppBar(
-        title: const Text("Delivery Info"),
+        title: Text(loc.deliveryInfo),
         backgroundColor: isDarkMode ? const Color(0xFF1F2F56) : Colors.white,
         foregroundColor: isDarkMode ? Colors.white : Colors.black,
       ),
-body: _isLoading
-    ? Center(
-        child: CircularProgressIndicator(
-          color: isDarkMode ? Colors.white : Colors.black,
-        ),
-      )
-    : SafeArea(
-        child: Column(
-          children: [
-            // Stepper always below AppBar
-            HorizontalStepper(
-              currentStep: _currentStep,
-              steps: _steps,
-            ),
-
-            // Card area scrollable + centered horizontally
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 600),
-                    child: Card(
-                      color: isDarkMode ? const Color(0xFF1F2F56) : Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 8,
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextFormField(
-                              controller: _deliveryNumberController,
-                              style: TextStyle(
-                                  color: isDarkMode ? Colors.white : Colors.black),
-                              decoration: _inputDecoration("Delivery Number *", isDarkMode),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            )
+          : SafeArea(
+              child: Column(
+                children: [
+                  HorizontalStepper(currentStep: _currentStep, steps: _steps),
+                  Expanded(
+                    child: Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 600),
+                          child: Card(
+                            color: isDarkMode ? const Color(0xFF1F2F56) : Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            const SizedBox(height: 16),
-                            _buildFilePicker(isDarkMode),
-                            TextFormField(
-                              controller: _notesController,
-                              maxLines: 3,
-                              style: TextStyle(
-                                  color: isDarkMode ? Colors.white : Colors.black),
-                              decoration: _inputDecoration("Notes", isDarkMode),
-                            ),
-                            const SizedBox(height: 24),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: _isSubmitting ? null : _saveDelivery,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFF39C12),
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: _isSubmitting
-                                        ? const CircularProgressIndicator(color: Colors.white)
-                                        : const Text('Save',
-                                            style: TextStyle(color: Colors.white, fontSize: 16)),
+                            elevation: 8,
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextFormField(
+                                    controller: _deliveryNumberController,
+                                    style: TextStyle(
+                                        color: isDarkMode ? Colors.white : Colors.black),
+                                    decoration:
+                                        _inputDecoration("${loc.deliveryNumber} *", isDarkMode),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: _isSubmitting ? null : _sendDeliveryEmail,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: _isSubmitting
-                                        ? const CircularProgressIndicator(color: Colors.white)
-                                        : const Text('Send Email',
-                                            style: TextStyle(color: Colors.white, fontSize: 16)),
+                                  const SizedBox(height: 16),
+                                  _buildFilePicker(isDarkMode),
+                                  TextFormField(
+                                    controller: _notesController,
+                                    maxLines: 3,
+                                    style: TextStyle(
+                                        color: isDarkMode ? Colors.white : Colors.black),
+                                    decoration: _inputDecoration(loc.notes, isDarkMode),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: _isSubmitting ? null : _saveDelivery,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFF39C12),
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: _isSubmitting
+                                              ? const CircularProgressIndicator(
+                                                  color: Colors.white)
+                                              : Text(loc.save,
+                                                  style: const TextStyle(
+                                                      color: Colors.white, fontSize: 16)),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: _isSubmitting ? null : _sendDeliveryEmail,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: _isSubmitting
+                                              ? const CircularProgressIndicator(
+                                                  color: Colors.white)
+                                              : Text(loc.sendEmail,
+                                                  style: const TextStyle(
+                                                      color: Colors.white, fontSize: 16)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-
-
     );
   }
 }

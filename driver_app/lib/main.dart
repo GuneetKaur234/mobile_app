@@ -9,9 +9,17 @@ import 'screens/load_detail_steps/pickup_info.dart';
 import 'screens/load_detail_steps/trailer_photos.dart';
 import 'screens/load_detail_steps/delivery_info.dart';
 import 'screens/load_detail_steps/homepage.dart';
+import 'screens/load_detail_steps/my_profile.dart';
 
 // Import your preferences provider
 import 'screens/preferences_provider.dart';
+
+// Import localization
+import 'l10n/app_localizations.dart';
+
+// 🌐 Base API URL for Azure
+const String baseUrl =
+    'https://mobile-app-gpehf7f5c4h9cre6.canadacentral-01.azurewebsites.net/api/driver/driver/';
 
 void main() {
   runApp(
@@ -71,6 +79,12 @@ class DriverApp extends StatelessWidget {
               ),
             ),
           ),
+
+          // 🔹 Localization setup
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: prefs.locale, // Use provider locale
+
           home: const InitialScreen(),
         );
       },
@@ -123,5 +137,70 @@ class _InitialScreenState extends State<InitialScreen> {
 
     // Otherwise → Latest Loads home
     return LatestLoadsScreen(driverId: _driverId!);
+  }
+}
+
+// PreferencesScreen with language selector
+class PreferencesScreen extends StatelessWidget {
+  const PreferencesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = Provider.of<PreferencesProvider>(context);
+    final isDarkMode = prefs.isDarkMode;
+    final loc = AppLocalizations.of(context)!;
+
+    return Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF16213D) : const Color(0xFFF0F2F5),
+      appBar: AppBar(
+        title: Text(loc.appPreferences),
+        backgroundColor: isDarkMode ? const Color(0xFF1F2F56) : Colors.white,
+        foregroundColor: isDarkMode ? Colors.white : Colors.black,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Dark Mode Toggle
+            SwitchListTile(
+              title: Text(loc.darkMode, style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87)),
+              value: prefs.isDarkMode,
+              onChanged: (val) => prefs.toggleTheme(),
+            ),
+            const SizedBox(height: 20),
+
+            // Font Size Slider
+            Text("${loc.fontSize}: ${prefs.fontSize.toStringAsFixed(0)}",
+                style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87)),
+            Slider(
+              min: 12,
+              max: 24,
+              divisions: 6,
+              value: prefs.fontSize,
+              label: prefs.fontSize.toStringAsFixed(0),
+              activeColor: isDarkMode ? Colors.blue[300] : Colors.blue,
+              inactiveColor: isDarkMode ? Colors.white24 : Colors.black26,
+              onChanged: (val) => prefs.setFontSize(val),
+            ),
+            const SizedBox(height: 20),
+
+            // Language Selector
+            Text(loc.language, style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87)),
+            const SizedBox(height: 8),
+            DropdownButton<String>(
+              value: prefs.languageCode,
+              items: const [
+                DropdownMenuItem(value: 'en', child: Text('English')),
+                DropdownMenuItem(value: 'fr', child: Text('Français')),
+              ],
+              onChanged: (val) {
+                if (val != null) prefs.setLanguage(val);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,0 +1,186 @@
+{
+  "@@locale": "en",
+  "welcome": "Welcome",
+  "pickup": "Pickup",
+  "delivery": "Delivery",
+  "settings": "Settings",
+  "selectLanguage": "Select your language",
+  "continueButton": "Continue",
+  "letsGetYouSetUp": "Let's get you set up!",
+  "name": "Name",
+  "licenseNumber": "License Number",
+  "company": "Company",
+  "scacCode": "SCAC Code",
+  "phone": "Phone",
+  "saveAndContinue": "Save & Continue",
+  "cannotBeEmpty": "{field} cannot be empty",
+  "@cannotBeEmpty": {
+    "description": "Shown when a required field is empty",
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "unableToConnect": "Unable to connect to the server. Check your connection.",
+  "connectionTimeout": "Connection timed out. You are not approved or server is unreachable.",
+  "unexpectedError": "Unexpected error: {error}",
+  "@unexpectedError": {
+    "description": "Shown when an unexpected error occurs",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "notApproved": "You are not approved. Please contact your company.",
+  "dashboard": "Dashboard",
+  "noRecentLoads": "No recent loads found.",
+  "load": "Load",
+  "customer": "Customer",
+  "status": "Status",
+  "completed": "Completed",
+  "pending": "Pending",
+  "pickupInfo": "Pickup Info",
+  "trailerUpload": "Trailer Upload",
+  "deliveryInfo": "Delivery Info",
+  "deliveryCompletedSnack": "Delivery completed!",
+  "loadNumber": "Load Number",
+  "pickupNumber": "Pickup Number",
+  "noLoadDetails": "No load details found.",
+  "loadDetails": "Load Details",
+  "pickupDetails": "Pickup Details",
+  "truckNumber": "Truck Number",
+  "trailerNumber": "Trailer Number",
+  "equipmentType": "Equipment Type",
+  "equipmentTypeRequired": "Equipment Type is required",
+  "customerRequired": "Customer is required",
+  "orderNumber": "Order Number",
+  "reeferPreCool": "Reefer Pre-Cool (°F)",
+  "pickupInfoSaved": "Pickup info saved",
+  "pickupInfoSavedTransit": "Pickup info saved & status updated to In Transit",
+  "failedToSave": "Failed to save",
+  "networkError": "Network error: {error}",
+  "@networkError": {
+    "description": "Shown when a network error occurs while saving",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "pictureUpload": "Picture Upload",
+  "trailerPicture": "Trailer Picture",
+  "pulp": "Pulp",
+  "yes": "Yes",
+  "no": "No",
+  "pulpPicture": "Pulp Picture",
+  "pulpReason": "If not, Why?",
+  "reeferPicture": "Reefer Picture",
+  "loadSecurePicture": "Load Secure Picture",
+  "sealedTrailerPicture": "Sealed Trailer Picture",
+  "bol": "BOL",
+  "reeferTempShipper": "Reefer Temp (Set by Shipper)",
+  "reeferTempBol": "Reefer Temp on BOL",
+  "temperatureUnit": "Temperature Unit",
+  "sealNumber": "Seal Number",
+  "pickupNotes": "Pickup Notes",
+  "save": "Save",
+  "sendPickupEmail": "Send Pickup email",
+  "pickupEmailSuccess": "Pickup email sent successfully!",
+  "pickupEmailFailed": "Failed to send pickup email",
+  "missingFields": "Please provide: {fields}",
+  "@missingFields": {
+    "description": "Shown when some required fields are missing",
+    "placeholders": {
+      "fields": {}
+    }
+  },
+  "fillReeferTemp": "Please fill Reefer temperatures",
+  "upload": "Upload",
+  "addMoreFiles": "Add More Files",
+  "failedToLoadFiles": "Failed to load files",
+  "errorLoadingFiles": "Error loading files: {error}",
+  "@errorLoadingFiles": {
+    "description": "Shown when loading files fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorPickingImages": "Error picking images: {error}",
+  "@errorPickingImages": {
+    "description": "Shown when image picking fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "pleaseProvide": "Please provide: {fields}",
+  "@pleaseProvide": {
+    "description": "Shown when required fields are missing",
+    "placeholders": {
+      "fields": {}
+    }
+  },
+  "deliveryNumber": "Delivery Number",
+  "enterDeliveryNumber": "Please enter a Delivery Number",
+  "podFiles": "POD Files",
+  "uploadAtLeastOnePod": "Please upload at least one POD file",
+  "deliveryInfoSaved": "Delivery info saved successfully",
+  "deliveryEmailSent": "Delivery email sent successfully!",
+  "failedToLoadDeliveryInfo": "Failed to load delivery info",
+  "errorLoadingDeliveryInfo": "Error loading delivery info: {error}",
+  "@errorLoadingDeliveryInfo": {
+    "description": "Shown when fetching delivery info fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "sendEmail": "Send Email",
+  "notes": "Notes",
+  "error": "Error",
+   "tripCompleted": "Trip Completed!",
+  "deliverySentSuccess": "Delivery info has been sent successfully 🎉",
+  "goToDashboard": "Go to Dashboard",
+  
+  "@tripCompleted": {
+    "description": "Shown on the screen when the trip is finished"
+  },
+  "@deliverySentSuccess": {
+    "description": "Shown when delivery info is successfully sent"
+  },
+  "@goToDashboard": {
+    "description": "Button text to return to the dashboard"
+  },
+  "upload": "Upload",
+  "addMoreFiles": "Add More Files",
+  "status_in_transit": "In Transit",
+  "status_pickup_completed": "Pickup Completed",
+  "status_delivered": "Delivered",
+  "myProfile": "My Profile",
+  "fullName": "Full Name",
+  "phone": "Phone",
+  "licenseNumber": "License Number",
+  "company": "Company",
+  "saveProfile": "Save Profile",
+  "failedFetchProfile": "Failed to fetch profile",
+  "profileUpdated": "Profile updated successfully",
+  "fieldRequired": "{field} is required",
+  "networkError": "Network error: {error}",
+  "settings": "Settings",
+  "account": "Account",
+  "preferences": "Preferences",
+  "support": "Support",
+  "security": "Security",
+  "appInfo": "App Info",
+  "myProfile": "My Profile",
+  "viewUpdateDriverDetails": "View/update driver details",
+  "appPreferences": "App Preferences",
+  "darkModeFontSize": "Dark mode, font size",
+  "helpSupport": "Help & Support",
+  "contactDispatcherHotlineFaq": "Contact dispatcher, hotline, FAQ",
+  "privacySecurity": "Privacy & Security",
+  "managePermissions": "Manage permissions",
+  "aboutApp": "About App",
+  "versionCompanyContact": "Version info, company contact",
+  "logout": "Logout",
+  "darkMode": "Dark Mode",
+  "fontSize": "Font Size",
+  "language": "Language",
+  "completed": "Completed",
+  "pending": "Pending"
+
+}

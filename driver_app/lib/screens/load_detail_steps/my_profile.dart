@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../preferences_provider.dart'; // ✅ import provider
+import '../../main.dart';
+import '../../l10n/app_localizations.dart'; // <-- import localization
 
 class MyProfileScreen extends StatefulWidget {
   final int driverId;
@@ -31,15 +33,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Future<void> _fetchDriverProfile() async {
+    final loc = AppLocalizations.of(context)!;
     setState(() => _loading = true);
     try {
-      final url = Uri.parse(
-          'http://10.0.2.2:8000/api/driver/driver/get-profile/${widget.driverId}/');
+      final url = Uri.parse("${baseUrl}get-profile/${widget.driverId}/");
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         setState(() {
           _nameController.text = data['name'] ?? '';
           _phoneController.text = data['phone'] ?? '';
@@ -48,12 +49,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to fetch profile')),
+          SnackBar(content: Text(loc.failedFetchProfile)),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network error: $e')),
+        SnackBar(content: Text(loc.networkError(e.toString()))),
       );
     } finally {
       setState(() => _loading = false);
@@ -61,6 +62,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
+    final loc = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
@@ -72,8 +74,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       "company": _companyController.text.trim(),
     };
 
-    final url = Uri.parse(
-        'http://10.0.2.2:8000/api/driver/driver/update-profile/');
+    final url = Uri.parse("${baseUrl}update-profile/");
     try {
       final response = await http.put(
         url,
@@ -84,17 +85,17 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         setState(() => _isSaved = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
+          SnackBar(content: Text(loc.profileUpdated)),
         );
       } else {
         final resData = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(resData['error'] ?? 'Failed to update profile')),
+          SnackBar(content: Text(resData['error'] ?? loc.failedFetchProfile)),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Network error: $e')),
+        SnackBar(content: Text(loc.networkError(e.toString()))),
       );
     } finally {
       setState(() => _loading = false);
@@ -120,13 +121,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Widget _buildTextField(
       TextEditingController controller, String label, bool isDarkMode,
       {TextInputType keyboardType = TextInputType.text}) {
+    final loc = AppLocalizations.of(context)!;
     return TextFormField(
       controller: controller,
       style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
       keyboardType: keyboardType,
       decoration: _inputDecoration(label, isDarkMode),
       validator: (val) =>
-          val == null || val.isEmpty ? '$label is required' : null,
+          val == null || val.isEmpty ? loc.cannotBeEmpty(label) : null,
     );
   }
 
@@ -143,11 +145,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Provider.of<PreferencesProvider>(context);
     final isDarkMode = theme.isDarkMode;
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF16213D) : const Color(0xFFF0F2F5),
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: Text(loc.myProfile),
         backgroundColor: isDarkMode ? const Color(0xFF1F2F56) : Colors.white,
         foregroundColor: isDarkMode ? Colors.white : Colors.black,
       ),
@@ -176,16 +179,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _buildTextField(_nameController, 'Full Name', isDarkMode),
+                              _buildTextField(_nameController, loc.fullName, isDarkMode),
                               const SizedBox(height: 16),
-                              _buildTextField(_phoneController, 'Phone', isDarkMode,
+                              _buildTextField(_phoneController, loc.phone, isDarkMode,
                                   keyboardType: TextInputType.phone),
                               const SizedBox(height: 16),
                               _buildTextField(
-                                  _licenseController, 'License Number', isDarkMode),
+                                  _licenseController, loc.licenseNumber, isDarkMode),
                               const SizedBox(height: 16),
                               _buildTextField(
-                                  _companyController, 'Company', isDarkMode),
+                                  _companyController, loc.company, isDarkMode),
                               const SizedBox(height: 24),
                               ElevatedButton(
                                 onPressed: _loading ? null : _saveProfile,
@@ -206,9 +209,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                           strokeWidth: 2,
                                         ),
                                       )
-                                    : const Text(
-                                        'Save Profile',
-                                        style: TextStyle(
+                                    : Text(
+                                        loc.saveProfile,
+                                        style: const TextStyle(
                                             fontSize: 16, color: Colors.white),
                                       ),
                               ),

@@ -1,0 +1,187 @@
+{
+  "@@locale": "fr",
+  "welcome": "Bienvenue",
+  "pickup": "Ramassage",
+  "delivery": "Livraison",
+  "settings": "Paramètres",
+  "selectLanguage": "Sélectionnez votre langue",
+  "continueButton": "Continuer",
+  "letsGetYouSetUp": "Configurons votre compte !",
+  "name": "Nom",
+  "licenseNumber": "Numéro de permis",
+  "company": "Entreprise",
+  "scacCode": "Code SCAC",
+  "phone": "Téléphone",
+  "saveAndContinue": "Enregistrer & Continuer",
+  "cannotBeEmpty": "{field} ne peut pas être vide",
+  "@cannotBeEmpty": {
+    "description": "Affiché lorsqu'un champ obligatoire est vide",
+    "placeholders": {
+      "field": {}
+    }
+  },
+  "unableToConnect": "Impossible de se connecter au serveur. Vérifiez votre connexion.",
+  "connectionTimeout": "Le délai de connexion a expiré. Vous n'êtes pas approuvé ou le serveur est inaccessible.",
+  "unexpectedError": "Erreur inattendue : {error}",
+  "@unexpectedError": {
+    "description": "Affiché lorsqu'une erreur inattendue se produit",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "notApproved": "Vous n'êtes pas approuvé. Veuillez contacter votre entreprise.",
+  "dashboard": "Tableau de bord",
+  "noRecentLoads": "Aucun chargement récent trouvé.",
+  "load": "Chargement",
+  "customer": "Client",
+  "status": "Statut",
+  "completed": "Terminé",
+  "pending": "En attente",
+  "pickupInfo": "Informations de ramassage",
+  "trailerUpload": "Téléversement de la remorque",
+  "deliveryInfo": "Informations de livraison",
+  "deliveryCompletedSnack": "Livraison terminée !",
+  "loadNumber": "Numéro de chargement",
+  "pickupNumber": "Numéro de ramassage",
+  "noLoadDetails": "Aucun détail de chargement trouvé.",
+  "loadDetails": "Détails du chargement",
+  "pickupDetails": "Détails du ramassage",
+  "truckNumber": "Numéro du camion",
+  "trailerNumber": "Numéro de la remorque",
+  "equipmentType": "Type d'équipement",
+  "equipmentTypeRequired": "Le type d'équipement est requis",
+  "customerRequired": "Le client est requis",
+  "orderNumber": "Numéro de commande",
+  "reeferPreCool": "Pré-refroidissement du reefere (°F)",
+  "save": "Enregistrer",
+  "pickupInfoSaved": "Informations de ramassage enregistrées",
+  "pickupInfoSavedTransit": "Informations de ramassage enregistrées et statut mis à jour à En transit",
+  "failedToSave": "Échec de l'enregistrement",
+  "networkError": "Erreur réseau : {error}",
+  "@networkError": {
+    "description": "Affiché lorsqu'une erreur réseau se produit lors de l'enregistrement",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "pictureUpload": "Téléversement d’images",
+  "trailerPicture": "Photo de la remorque",
+  "pulp": "Pulpe",
+  "yes": "Oui",
+  "no": "Non",
+  "pulpPicture": "Photo de la pulpe",
+  "pulpReason": "Sinon, pourquoi ?",
+  "reeferPicture": "Photo du réfrigéré",
+  "loadSecurePicture": "Photo du chargement sécurisé",
+  "sealedTrailerPicture": "Photo de la remorque scellée",
+  "bol": "Connaissement (BOL)",
+  "reeferTempShipper": "Température réfrigérée définie par l’expéditeur",
+  "reeferTempBol": "Température réfrigérée sur le BOL",
+  "temperatureUnit": "Unité de température",
+  "sealNumber": "Numéro de sceau",
+  "pickupNotes": "Notes de ramassage",
+  "sendPickupEmail": "Envoyer l’email de ramassage",
+  "pickupEmailSuccess": "Email de ramassage envoyé avec succès !",
+  "pickupEmailFailed": "Échec de l’envoi de l’email de ramassage",
+  "missingFields": "Veuillez fournir : {fields}",
+  "@missingFields": {
+    "description": "Affiché lorsque certains champs obligatoires sont manquants",
+    "placeholders": {
+      "fields": {}
+    }
+  },
+  "fillReeferTemp": "Veuillez remplir les températures réfrigérées",
+  "upload": "Téléverser",
+  "addMoreFiles": "Ajouter plus de fichiers",
+  "failedToLoadFiles": "Échec du chargement des fichiers",
+  "errorLoadingFiles": "Erreur lors du chargement des fichiers : {error}",
+  "@errorLoadingFiles": {
+    "description": "Affiché lorsque le chargement des fichiers échoue",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorPickingImages": "Erreur lors de la sélection des images : {error}",
+  "@errorPickingImages": {
+    "description": "Affiché lorsqu'une erreur de sélection d'image se produit",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "pleaseProvide": "Veuillez fournir : {fields}",
+  "@pleaseProvide": {
+    "description": "Affiché lorsque des champs obligatoires sont manquants",
+    "placeholders": {
+      "fields": {}
+    }
+  },
+
+  "deliveryNumber": "Numéro de livraison",
+  "enterDeliveryNumber": "Veuillez entrer un numéro de livraison",
+  "podFiles": "Fichiers POD",
+  "uploadAtLeastOnePod": "Veuillez télécharger au moins un fichier POD",
+  "deliveryInfoSaved": "Informations de livraison enregistrées avec succès",
+  "deliveryEmailSent": "Email de livraison envoyé avec succès !",
+  "failedToLoadDeliveryInfo": "Échec du chargement des informations de livraison",
+  "errorLoadingDeliveryInfo": "Erreur lors du chargement des informations de livraison : {error}",
+  "@errorLoadingDeliveryInfo": {
+    "description": "Affiché lorsqu'une erreur se produit lors de la récupération des informations de livraison",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "sendEmail": "Envoyer l’email",
+  "notes": "Notes",
+  "error": "Erreur",
+  "tripCompleted": "Trajet terminé !",
+  "deliverySentSuccess": "Les informations de livraison ont été envoyées avec succès 🎉",
+  "goToDashboard": "Aller au tableau de bord",
+
+  "@tripCompleted": {
+    "description": "Shown on the screen when the trip is finished"
+  },
+  "@deliverySentSuccess": {
+    "description": "Shown when delivery info is successfully sent"
+  },
+  "@goToDashboard": {
+    "description": "Button text to return to the dashboard"
+  },
+  "continueButton": "Continuer",
+  "upload": "Téléverser",
+  "addMoreFiles": "Ajouter d'autres fichiers",
+  "status_in_transit": "En tránsito",
+  "status_pickup_completed": "Recogida completada",
+  "status_delivered": "Entregado",
+  "myProfile": "Mon Profil",
+  "fullName": "Nom Complet",
+  "phone": "Téléphone",
+  "licenseNumber": "Numéro de Permis",
+  "company": "Entreprise",
+  "saveProfile": "Enregistrer le Profil",
+  "failedFetchProfile": "Échec de la récupération du profil",
+  "profileUpdated": "Profil mis à jour avec succès",
+  "fieldRequired": "{field} est requis",
+  "networkError": "Erreur réseau : {error}",
+  "settings": "Paramètres",
+  "account": "Compte",
+  "preferences": "Préférences",
+  "support": "Support",
+  "security": "Sécurité",
+  "appInfo": "À propos de l'application",
+  "myProfile": "Mon profil",
+  "viewUpdateDriverDetails": "Voir / mettre à jour les informations du conducteur",
+  "appPreferences": "Préférences de l'application",
+  "darkModeFontSize": "Mode sombre, taille de la police",
+  "helpSupport": "Aide & Support",
+  "contactDispatcherHotlineFaq": "Contacter le répartiteur, hotline, FAQ",
+  "privacySecurity": "Confidentialité & Sécurité",
+  "managePermissions": "Gérer les permissions",
+  "aboutApp": "À propos de l'application",
+  "versionCompanyContact": "Informations sur la version, contact de l'entreprise",
+  "logout": "Se déconnecter",
+  "darkMode": "Mode sombre",
+  "fontSize": "Taille de la police",
+  "language": "Langue",
+  "completed": "Terminé",
+  "pending": "En attente"
+}

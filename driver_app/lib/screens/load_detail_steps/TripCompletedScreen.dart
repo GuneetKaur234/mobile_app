@@ -5,6 +5,7 @@ import 'pickup_info.dart';
 import 'package:provider/provider.dart';
 import 'package:driver_app/screens/preferences_provider.dart';
 import 'homepage.dart';
+import '../../l10n/app_localizations.dart';
 
 class TripCompletedScreen extends StatefulWidget {
   final int driverId;
@@ -38,7 +39,7 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
       context,
       MaterialPageRoute(
           builder: (_) => LatestLoadsScreen(driverId: widget.driverId)),
-      (route) => false, // removes all previous routes
+      (route) => false,
     );
   }
 
@@ -93,7 +94,7 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  "Trip Completed!",
+                  AppLocalizations.of(context)!.tripCompleted,
                   style: TextStyle(
                     color: isDarkMode ? Colors.white : Colors.black,
                     fontSize: 28,
@@ -102,14 +103,14 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Delivery info has been sent successfully 🎉",
+                  AppLocalizations.of(context)!.deliverySentSuccess,
                   style: TextStyle(
                     color: isDarkMode ? Colors.white70 : Colors.black87,
                     fontSize: 16,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32), // <- added spacing before button
+                const SizedBox(height: 32),
                 SizedBox(
                   width: 200,
                   height: 50,
@@ -121,9 +122,9 @@ class _TripCompletedScreenState extends State<TripCompletedScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      "Go to Dashboard",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    child: Text(
+                      AppLocalizations.of(context)!.goToDashboard,
+                      style: const TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
                 ),

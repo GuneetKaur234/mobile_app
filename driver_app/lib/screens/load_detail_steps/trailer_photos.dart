@@ -9,6 +9,9 @@ import '../preferences_provider.dart';
 import 'horizontal_stepper.dart';
 import 'delivery_info.dart';
 import 'package:driver_app/screens/load_detail_steps/load_detail.dart';
+import '../../main.dart';
+import '../../l10n/app_localizations.dart';
+
 
 class BackendFile {
   final int id;
@@ -36,7 +39,7 @@ class TrailerPhotosScreen extends StatefulWidget {
 class _TrailerPhotosScreenState extends State<TrailerPhotosScreen> {
   int _currentStep = 1; // Step 2
   final List<String> _steps = ["Pickup Info", "Trailer Info", "Delivery Info"];
-
+  
   String? _equipmentType;
 
   List<File> trailerNew = [];
@@ -81,6 +84,9 @@ void initState() {
   _initializeData();
 }
 
+
+
+
 Future<void> _initializeData() async {
   if (_equipmentType == null) {
     final eqType = await _fetchEquipmentType();
@@ -91,20 +97,21 @@ Future<void> _initializeData() async {
   await _fetchExistingFiles();
 }
 
+
+
   @override
-  void dispose() {
-    _notesController.dispose();
-    _sealNumberController.dispose();
-    _pulpReasonController.dispose();
-    _reeferTempShipperController.dispose();
-    _reeferTempBolController.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _notesController.dispose();
+  _sealNumberController.dispose();
+  _pulpReasonController.dispose();
+  _reeferTempShipperController.dispose();
+  _reeferTempBolController.dispose();
+  super.dispose();
+}
 
 Future<void> _fetchExistingFiles() async {
   try {
-    final uri = Uri.parse(
-        "http://10.0.2.2:8000/api/driver/driver/get-uploads/${widget.loadId}/");
+    final uri = Uri.parse('${baseUrl}get-uploads/${widget.loadId}/');
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
@@ -180,12 +187,20 @@ Future<void> _fetchExistingFiles() async {
         }
       });
     } else {
+      // handle non-200
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to load existing files")));
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.failedToLoadFiles),
+        ),
+      );
     }
   } catch (e) {
+    // ✅ this catch is now valid
     ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error loading files: $e")));
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.errorLoadingFiles(e.toString())),
+      ),
+    );
   }
 }
 
@@ -251,7 +266,7 @@ Future<void> _fetchExistingFiles() async {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking images: $e')));
+          SnackBar(content: Text(AppLocalizations.of(context)!.errorPickingImages(e.toString()))));
     }
   }
 
@@ -284,9 +299,11 @@ Future<void> _fetchExistingFiles() async {
           child: ElevatedButton.icon(
             onPressed: () => _pickImages(type),
             icon: const Icon(Icons.upload_file),
-            label: Text(newFiles.isEmpty && existingFiles.isEmpty
-                ? 'Upload'
-                : 'Add More Files'),
+            label: Text(
+              newFiles.isEmpty && existingFiles.isEmpty
+                  ? AppLocalizations.of(context)!.upload
+                  : AppLocalizations.of(context)!.addMoreFiles,
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2980B9),
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -352,8 +369,8 @@ Future<void> _fetchExistingFiles() async {
     setState(() => _loading = true);
 
     final uri = Uri.parse(_isSaved
-        ? "http://10.0.2.2:8000/api/driver/driver/update-upload/${widget.loadId}/"
-        : "http://10.0.2.2:8000/api/driver/driver/save-upload/");
+        ? "${baseUrl}update-upload/${widget.loadId}/"
+        : "${baseUrl}save-upload/");
 
     final request = http.MultipartRequest('POST', uri);
 
@@ -422,25 +439,44 @@ bool _validateBeforeEmail() {
   final missing = <String>[];
 
   // Always required
-  if (trailerNew.isEmpty && trailerExisting.isEmpty) missing.add("Trailer Picture");
-  if (loadSecureNew.isEmpty && loadSecureExisting.isEmpty) missing.add("Load Secure Picture");
-  if (sealedTrailerNew.isEmpty && sealedTrailerExisting.isEmpty) missing.add("Sealed Trailer Picture");
-  if (bolNew.isEmpty && bolExisting.isEmpty) missing.add("BOL");
-  if (_sealNumberController.text.trim().isEmpty) missing.add("Seal Number");
+  if (trailerNew.isEmpty && trailerExisting.isEmpty) {
+    missing.add(AppLocalizations.of(context)!.trailerPicture);
+  }
+  if (loadSecureNew.isEmpty && loadSecureExisting.isEmpty) {
+    missing.add(AppLocalizations.of(context)!.loadSecurePicture);
+  }
+  if (sealedTrailerNew.isEmpty && sealedTrailerExisting.isEmpty) {
+    missing.add(AppLocalizations.of(context)!.sealedTrailerPicture);
+  }
+  if (bolNew.isEmpty && bolExisting.isEmpty) {
+    missing.add(AppLocalizations.of(context)!.bol);
+  }
+  if (_sealNumberController.text.trim().isEmpty) {
+    missing.add("Seal Number");
+  }
 
   // Only validate Reefer-related fields if equipment type is Reefer
   if (_equipmentType == "reefer") {
     if (_pulpYes) {
-      if (pulpNew.isEmpty && pulpExisting.isEmpty) missing.add("Pulp Picture");
+      if (pulpNew.isEmpty && pulpExisting.isEmpty) {
+        missing.add(AppLocalizations.of(context)!.pulpPicture);
+      }
     } else {
-      if (_pulpReasonController.text.trim().isEmpty) missing.add("Pulp Reason");
+      if (_pulpReasonController.text.trim().isEmpty) {
+        missing.add("Pulp Reason");
+      }
     }
 
-    if (reeferNew.isEmpty && reeferExisting.isEmpty) missing.add("Reefer Picture");
+    if (reeferNew.isEmpty && reeferExisting.isEmpty) {
+      missing.add(AppLocalizations.of(context)!.reeferPicture);
+    }
 
-    if (_reeferTempShipperController.text.isEmpty || _reeferTempBolController.text.isEmpty) {
+    if (_reeferTempShipperController.text.isEmpty ||
+        _reeferTempBolController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill Reefer temperatures")),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.fillReeferTemp),
+        ),
       );
       return false;
     }
@@ -449,13 +485,18 @@ bool _validateBeforeEmail() {
   // Show missing fields if any
   if (missing.isNotEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Please provide: ${missing.join(', ')}")),
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)!.pleaseProvide(missing.join(', ')),
+        ),
+      ),
     );
     return false;
   }
 
-  return true;
+  return true; // always return a bool
 }
+
 
   Future<void> _sendPickupEmail() async {
     if (!_validateBeforeEmail()) return;
@@ -470,7 +511,7 @@ bool _validateBeforeEmail() {
     }
 
     final uri = Uri.parse(
-        "http://10.0.2.2:8000/api/driver/driver/send-pickup-email/${widget.loadId}/");
+        "${baseUrl}send-pickup-email/${widget.loadId}/");
 
     try {
       final response = await http.post(uri);
@@ -498,7 +539,7 @@ bool _validateBeforeEmail() {
 Future<String?> _fetchEquipmentType() async {
   try {
     final uri = Uri.parse(
-        "http://10.0.2.2:8000/api/driver/driver/get-load-detail/${widget.loadId}/");
+        "${baseUrl}get-load-detail/${widget.loadId}/");
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
@@ -520,7 +561,7 @@ Future<String?> _fetchEquipmentType() async {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF16213D) : const Color(0xFFFAFAFA),
       appBar: AppBar(
-        title: const Text('Picture Upload'),
+        title: Text(AppLocalizations.of(context)!.pictureUpload),
         backgroundColor: isDark ? const Color(0xFF1F2F56) : const Color(0xFFFDFDFD),
         iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
         titleTextStyle: TextStyle(
@@ -565,8 +606,8 @@ body: SafeArea(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildFilePicker("Trailer Picture", trailerNew,
-                        trailerExisting, "trailer_picture", isDark),
+                  _buildFilePicker(AppLocalizations.of(context)!.trailerPicture,
+                      trailerNew, trailerExisting, "trailer_picture", isDark),
 
                     // ----------------------------
                     // Reefer-only fields
@@ -575,7 +616,7 @@ body: SafeArea(
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("Pulp",
+                          Text(AppLocalizations.of(context)!.pulp,
                               style: TextStyle(
                                   color: isDark ? Colors.white : Colors.black,
                                   fontWeight: FontWeight.w500)),
@@ -584,7 +625,7 @@ body: SafeArea(
                             children: [
                               Expanded(
                                 child: RadioListTile<bool>(
-                                  title: Text("Yes",
+                                  title: Text(AppLocalizations.of(context)!.yes,
                                       style: TextStyle(
                                           color: isDark ? Colors.white : Colors.black)),
                                   value: true,
@@ -598,7 +639,7 @@ body: SafeArea(
                               ),
                               Expanded(
                                 child: RadioListTile<bool>(
-                                  title: Text("No",
+                                  title: Text(AppLocalizations.of(context)!.no,
                                       style: TextStyle(
                                           color: isDark ? Colors.white : Colors.black)),
                                   value: false,
@@ -614,7 +655,7 @@ body: SafeArea(
                           ),
                           const SizedBox(height: 8),
                           if (_pulpYes)
-                            _buildFilePicker("Pulp Picture", pulpNew,
+                            _buildFilePicker(AppLocalizations.of(context)!.pulpPicture, pulpNew,
                                 pulpExisting, "pulp_picture", isDark)
                           else
                             TextFormField(
@@ -623,26 +664,26 @@ body: SafeArea(
                               style: TextStyle(
                                   color: isDark ? Colors.white : Colors.black),
                               decoration:
-                                  _inputDecoration("If not, Why?", isDark),
+                                  _inputDecoration(AppLocalizations.of(context)!.pulpReason, isDark),
                             ),
                         ],
                       ),
                       
                       const SizedBox(height: 16),
-                      _buildFilePicker("Reefer Picture", reeferNew,
+                      _buildFilePicker(AppLocalizations.of(context)!.reeferPicture, reeferNew,
                           reeferExisting, "reefer_picture", isDark),
                        ],
                        const SizedBox(height: 16),
 
-                      _buildFilePicker("Load Secure Picture", loadSecureNew,
+                      _buildFilePicker(AppLocalizations.of(context)!.loadSecurePicture, loadSecureNew,
                         loadSecureExisting, "load_secure_picture", isDark),
                     _buildFilePicker(
-                        "Sealed Trailer Picture",
+                        AppLocalizations.of(context)!.sealedTrailerPicture,
                         sealedTrailerNew,
                         sealedTrailerExisting,
                         "sealed_trailer_picture",
                         isDark),
-                    _buildFilePicker("BOL", bolNew, bolExisting,
+                    _buildFilePicker(AppLocalizations.of(context)!.bol, bolNew, bolExisting,
                         "bol_picture", isDark),
                     const SizedBox(height: 16),
 
@@ -653,7 +694,7 @@ body: SafeArea(
                         style: TextStyle(
                             color: isDark ? Colors.white : Colors.black),
                         decoration: _inputDecoration(
-                            "Reefer Temp (Set by Shipper)", isDark),
+                            AppLocalizations.of(context)!.reeferTempShipper, isDark),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -662,7 +703,7 @@ body: SafeArea(
                         style: TextStyle(
                             color: isDark ? Colors.white : Colors.black),
                         decoration:
-                            _inputDecoration("Reefer Temp on BOL", isDark),
+                            _inputDecoration(AppLocalizations.of(context)!.reeferTempBol, isDark),
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
@@ -691,7 +732,7 @@ body: SafeArea(
                       controller: _sealNumberController,
                       style: TextStyle(
                           color: isDark ? Colors.white : Colors.black),
-                      decoration: _inputDecoration("Seal Number", isDark),
+                      decoration: _inputDecoration(AppLocalizations.of(context)!.sealNumber, isDark),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -699,7 +740,7 @@ body: SafeArea(
                       maxLines: 3,
                       style: TextStyle(
                           color: isDark ? Colors.white : Colors.black),
-                      decoration: _inputDecoration("Pickup Notes", isDark),
+                      decoration: _inputDecoration(AppLocalizations.of(context)!.notes, isDark),
                     ),
                     const SizedBox(height: 24),
 
@@ -718,9 +759,8 @@ body: SafeArea(
                             ),
                             child: _loading
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text('Save',
-                                    style: TextStyle(
-                                        color: Colors.white, fontSize: 16)),
+                                : Text(AppLocalizations.of(context)!.save,
+                                    style: TextStyle(color: Colors.white, fontSize: 16)),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -735,7 +775,7 @@ body: SafeArea(
                             ),
                             child: _loading
                                 ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text('Send Pickup email',
+                                : Text(AppLocalizations.of(context)!.sendEmail,
                                     style: TextStyle(
                                         color: Colors.white, fontSize: 16)),
                           ),

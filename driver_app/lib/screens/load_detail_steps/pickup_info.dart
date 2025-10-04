@@ -9,6 +9,10 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'horizontal_stepper.dart';
 import 'package:driver_app/screens/preferences_provider.dart';
 import 'trailer_photos.dart';
+import '../../main.dart';
+import '../../l10n/app_localizations.dart';
+
+
 
 class PickupInfoScreen extends StatefulWidget {
   final int driverId;
@@ -45,19 +49,30 @@ class _PickupInfoScreenState extends State<PickupInfoScreen> {
   bool _equipmentLoading = true;
   bool _isSaved = false;
 
-  double _latitude = 0.0;
-  double _longitude = 0.0;
   int? _savedLoadId;
 
   int _currentStep = 0;
-  final List<String> _steps = ["Pickup Info", "Trailer Photos", "Delivery Info"];
+
+  /// Steps initialized later when localization is available
+  List<String> _steps = [];
 
   @override
   void initState() {
     super.initState();
     _initializePickupInfo();
-    _startTrackingLocation();
     _fetchEquipmentTypes();
+
+    // Ensure localization is ready before accessing context
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final loc = AppLocalizations.of(context)!;
+      setState(() {
+        _steps = [
+          loc.pickupInfo,
+          loc.trailerUpload,
+          loc.deliveryInfo,
+        ];
+      });
+    });
   }
 
   Future<void> _initializePickupInfo() async {
@@ -77,7 +92,7 @@ class _PickupInfoScreenState extends State<PickupInfoScreen> {
 
   Future<void> _fetchCustomers() async {
     setState(() => _customersLoading = true);
-    final url = Uri.parse('http://10.0.2.2:8000/api/driver/driver/get-customers/');
+    final url = Uri.parse('${baseUrl}get-customers/');
     try {
       final response = await http.post(
         url,
@@ -102,7 +117,7 @@ class _PickupInfoScreenState extends State<PickupInfoScreen> {
 
   Future<void> _fetchEquipmentTypes() async {
     setState(() => _equipmentLoading = true);
-    final url = Uri.parse('http://10.0.2.2:8000/api/driver/driver/get-equipment-types/');
+    final url = Uri.parse('${baseUrl}get-equipment-types/');
     try {
       final response = await http.get(url, headers: {"Content-Type": "application/json"});
       if (response.statusCode == 200) {
@@ -125,7 +140,7 @@ class _PickupInfoScreenState extends State<PickupInfoScreen> {
   }
 
   Future<void> _fetchLoadInfo(int loadId) async {
-    final url = Uri.parse('http://10.0.2.2:8000/api/driver/driver/get-truck-info/$loadId/');
+    final url = Uri.parse('${baseUrl}get-truck-info/$loadId/');
     try {
       final response = await http.get(url, headers: {"Content-Type": "application/json"});
       if (response.statusCode == 200) {
@@ -165,131 +180,94 @@ class _PickupInfoScreenState extends State<PickupInfoScreen> {
     }
   }
 
-  void _startTrackingLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
+  Future<bool> _saveTruckInfo({
+    bool validateRequiredFields = false,
+    String status = "pending_pickup",
+    bool updateStatus = false,
+  }) async {
+    if (validateRequiredFields && !_formKey.currentState!.validate()) return false;
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
-    }
-    if (permission == LocationPermission.deniedForever) return;
-
-    Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
-      ),
-    ).listen((Position position) {
-      _latitude = position.latitude;
-      _longitude = position.longitude;
-      _updateLocationToBackend(position.latitude, position.longitude);
-    });
-  }
-
-  Future<void> _updateLocationToBackend(double lat, double lng) async {
-    final url = Uri.parse('https://jsonplaceholder.typicode.com/posts');
-    try {
-      await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"driver_id": widget.driverId, "latitude": lat, "longitude": lng}),
-      );
-    } catch (e) {
-      print("Failed to update location: $e");
-    }
-  }
-
-Future<bool> _saveTruckInfo({
-  bool validateRequiredFields = false,
-  String status = "pending_pickup",
-  bool updateStatus = false,
-}) async {
-  if (validateRequiredFields && !_formKey.currentState!.validate()) return false;
-
-  if (_selectedCustomer == null && validateRequiredFields) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select a customer')),
-    );
-    return false;
-  }
-
-  if (_selectedEquipmentType == null && validateRequiredFields) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please select equipment type')),
-    );
-    return false;
-  }
-
-  setState(() => _loading = true);
-
-  final payload = {
-    "driver_id": widget.driverId,
-    if (_savedLoadId != null) "load_id": _savedLoadId,
-    if (_truckNumberController.text.isNotEmpty) "truck_number": _truckNumberController.text.trim(),
-    if (_trailerNumberController.text.isNotEmpty) "trailer_number": _trailerNumberController.text.trim(),
-    if (_selectedCustomer != null) "customer_name": _selectedCustomer!['name'],
-    if (_selectedCustomer != null) "customer_id": _selectedCustomer!['id'],
-    if (_selectedEquipmentType != null) "equipment_type": _selectedEquipmentType!['id'],
-    if (_loadNumberController.text.isNotEmpty) "load_number": _loadNumberController.text.trim(),
-    if (_pickupNumberController.text.isNotEmpty) "pickup_number": _pickupNumberController.text.trim(),
-    if (_orderNumberController.text.isNotEmpty) "order_number": _orderNumberController.text.trim(),
-    if (_reeferPreCoolController.text.isNotEmpty) "reefer_pre_cool": _reeferPreCoolController.text.trim(),
-    "latitude": _latitude,
-    "longitude": _longitude,
-    "status": status,
-    "update_status": updateStatus,
-    "force_new_load": false,
-    "validate_required": validateRequiredFields,
-  };
-
-  final url = Uri.parse('http://10.0.2.2:8000/api/driver/driver/save-or-update-truck-info/');
-
-  try {
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(payload),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final resData = jsonDecode(response.body);
-      _savedLoadId = resData['load_id'];
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('last_load_id', _savedLoadId!);
-
-      setState(() {
-        _isSaved = true;
-        if (validateRequiredFields) _currentStep = 1;
-      });
-
+    if (_selectedCustomer == null && validateRequiredFields) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(validateRequiredFields
-              ? 'Pickup info saved & status updated to In Transit'
-              : 'Pickup info saved'),
-        ),
-      );
-      return true; // <-- success
-    } else {
-      final resData = jsonDecode(response.body);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(resData['error'] ?? 'Failed to save')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.customerRequired)),
       );
       return false;
     }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Network error: $e')),
-    );
-    return false;
-  } finally {
-    setState(() => _loading = false);
-  }
-}
 
+    if (_selectedEquipmentType == null && validateRequiredFields) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.equipmentTypeRequired)),
+      );
+      return false;
+    }
+
+    setState(() => _loading = true);
+
+    final payload = {
+      "driver_id": widget.driverId,
+      if (_savedLoadId != null) "load_id": _savedLoadId,
+      if (_truckNumberController.text.isNotEmpty) "truck_number": _truckNumberController.text.trim(),
+      if (_trailerNumberController.text.isNotEmpty) "trailer_number": _trailerNumberController.text.trim(),
+      if (_selectedCustomer != null) "customer_name": _selectedCustomer!['name'],
+      if (_selectedCustomer != null) "customer_id": _selectedCustomer!['id'],
+      if (_selectedEquipmentType != null) "equipment_type": _selectedEquipmentType!['id'],
+      if (_loadNumberController.text.isNotEmpty) "load_number": _loadNumberController.text.trim(),
+      if (_pickupNumberController.text.isNotEmpty) "pickup_number": _pickupNumberController.text.trim(),
+      if (_orderNumberController.text.isNotEmpty) "order_number": _orderNumberController.text.trim(),
+      if (_reeferPreCoolController.text.isNotEmpty) "reefer_pre_cool": _reeferPreCoolController.text.trim(),
+      "status": status,
+      "update_status": updateStatus,
+      "force_new_load": false,
+      "validate_required": validateRequiredFields,
+    };
+
+    final url = Uri.parse('${baseUrl}save-or-update-truck-info/');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resData = jsonDecode(response.body);
+        _savedLoadId = resData['load_id'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('last_load_id', _savedLoadId!);
+
+        setState(() {
+          _isSaved = true;
+          if (validateRequiredFields) _currentStep = 1;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(validateRequiredFields
+                ? AppLocalizations.of(context)!.pickupInfoSavedTransit
+                : AppLocalizations.of(context)!.pickupInfoSaved),
+          ),
+        );
+        return true;
+      } else {
+        final resData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(resData['error'] ?? AppLocalizations.of(context)!.failedToSave)),
+        );
+        return false;
+      }
+    }catch (e) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(AppLocalizations.of(context)!.networkError(e.toString())),
+    ),
+  );
+      return false;
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -302,8 +280,10 @@ Future<bool> _saveTruckInfo({
     super.dispose();
   }
 
+
 Widget _buildTextField(TextEditingController controller, String label, {bool requiredField = true}) {
   final theme = Provider.of<PreferencesProvider>(context);
+  
   return TextFormField(
     controller: controller,
     style: TextStyle(color: theme.isDarkMode ? Colors.white : Colors.black),
@@ -331,11 +311,13 @@ Widget _buildTextField(TextEditingController controller, String label, {bool req
   @override
   Widget build(BuildContext context) {
     final theme = Provider.of<PreferencesProvider>(context);
+    final loc = AppLocalizations.of(context)!;
+
 
     return Scaffold(
       backgroundColor: theme.isDarkMode ? const Color(0xFF16213D) : const Color(0xFFF0F2F5),
       appBar: AppBar(
-        title: const Text('Pickup Details'),
+        title: Text(loc.pickupDetails),
         backgroundColor: theme.isDarkMode ? const Color(0xFF1F2F56) : const Color(0xFFF8FAFB),
       ),
       body: SafeArea(
@@ -359,9 +341,9 @@ Widget _buildTextField(TextEditingController controller, String label, {bool req
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _buildTextField(_truckNumberController, 'Truck Number'),
+                              _buildTextField(_truckNumberController, loc.truckNumber),
                               const SizedBox(height: 16),
-                              _buildTextField(_trailerNumberController, 'Trailer Number'),
+                              _buildTextField(_trailerNumberController, loc.trailerNumber),
                               const SizedBox(height: 16),
 
                               _equipmentLoading
@@ -369,7 +351,7 @@ Widget _buildTextField(TextEditingController controller, String label, {bool req
                                   : DropdownButtonFormField2<Map<String, dynamic>>(
                                       value: _selectedEquipmentType,
                                       isExpanded: true,
-                                      decoration: _inputDecoration('Equipment Type', theme.isDarkMode),
+                                      decoration: _inputDecoration(loc.equipmentType, theme.isDarkMode),
                                       dropdownStyleData: DropdownStyleData(
                                         maxHeight: 200,
                                         decoration: BoxDecoration(
@@ -410,7 +392,7 @@ Widget _buildTextField(TextEditingController controller, String label, {bool req
                                   : DropdownButtonFormField2<Map<String, dynamic>>(
                                       value: _selectedCustomer,
                                       isExpanded: true,
-                                      decoration: _inputDecoration('Customer', theme.isDarkMode).copyWith(
+                                      decoration: _inputDecoration(loc.customer, theme.isDarkMode).copyWith(
                                         prefixIcon: Icon(Icons.person, color: theme.isDarkMode ? Colors.white70 : Colors.black54),
                                       ),
                                       dropdownStyleData: DropdownStyleData(
@@ -443,18 +425,18 @@ Widget _buildTextField(TextEditingController controller, String label, {bool req
                                     ),
 
                               const SizedBox(height: 16),
-                              _buildTextField(_loadNumberController, 'Load Number'),
+                              _buildTextField(_loadNumberController, loc.loadNumber),
                               const SizedBox(height: 16),
-                              _buildTextField(_pickupNumberController, 'Pickup Number'),
+                              _buildTextField(_pickupNumberController, loc.pickupNumber),
                               const SizedBox(height: 16),
-                              _buildTextField(_orderNumberController, 'Order Number', requiredField: false),
+                              _buildTextField(_orderNumberController, loc.orderNumber, requiredField: false),
                               const SizedBox(height: 16),
 
                               if (_selectedEquipmentType != null &&
                                   (_selectedEquipmentType!['name'] ?? '').toLowerCase().contains('reefer'))
                                 Column(
                                   children: [
-                                    _buildTextField(_reeferPreCoolController, 'Reefer Pre-Cool(dF)'),
+                                    _buildTextField(_reeferPreCoolController, loc.reeferPreCool),
                                     const SizedBox(height: 16),
                                   ],
                                 ),
@@ -475,7 +457,7 @@ Widget _buildTextField(TextEditingController controller, String label, {bool req
                                               height: 24,
                                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                             )
-                                          : const Text('Save', style: TextStyle(fontSize: 16, color: Colors.white)),
+                                          : Text(loc.save, style: const TextStyle(fontSize: 16, color: Colors.white)),
                                     ),
                                   ),
                                   const SizedBox(width: 16),
@@ -493,18 +475,14 @@ Expanded(
             if (success && _savedLoadId != null) {
               setState(() => _currentStep = 1);
 
-              
-              // 👇 Pass equipment type safely
-              final equipmentType = _selectedEquipmentType?['name'] ?? '';
-
-
+              // Navigate without stopping tracking
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                   builder: (_) => TrailerPhotosScreen(
                     driverId: widget.driverId,
                     loadId: _savedLoadId!,
-                    equipmentType: equipmentType,
+                    equipmentType: _selectedEquipmentType?['name'] ?? '',
                   ),
                 ),
               );
@@ -515,12 +493,13 @@ Expanded(
       padding: const EdgeInsets.symmetric(vertical: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
-    child: const Text(
-      'Continue',
-      style: TextStyle(fontSize: 16, color: Colors.white),
-    ),
+child: Text(
+  loc.continueButton,
+  style: const TextStyle(fontSize: 16, color: Colors.white),
+),
   ),
 ),
+
                                 ],
                               ),
                             ],
