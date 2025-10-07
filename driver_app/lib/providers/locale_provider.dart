@@ -20,9 +20,11 @@ class LocaleProvider with ChangeNotifier {
   void _loadLocale() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? code = prefs.getString('language_code');
-    if (code != null) {
+    if (code != null && code.isNotEmpty) {
       _locale = Locale(code);
-      notifyListeners();
+    } else {
+      _locale = const Locale('en'); // fallback to English
     }
+    notifyListeners();
   }
 }
