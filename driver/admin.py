@@ -194,8 +194,8 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
             ['Delivery Notes', Paragraph(safe_str(load.delivery_notes), normal_style)],
             ['Reefer Pre Cool', Paragraph(safe_str(load.reefer_pre_cool), normal_style)],
             ['Equipment Type', Paragraph(safe_str(load.equipment_type), normal_style)],  # ✅ added
-            ['Pickup Emails', Paragraph(safe_str(load.pickup_emails_html), normal_style)],
-            ['Delivery Emails', Paragraph(safe_str(load.delivery_emails_html), normal_style)],
+            ['Pickup Time', Paragraph(safe_str(load.pickup_datetime), normal_style)],
+            ['Delivery Time', Paragraph(safe_str(load.delivery_datetime), normal_style)],
             ['Status', Paragraph(safe_str(load.status), normal_style)],
             ['Reefer Temp (Shipper)', Paragraph(safe_str(load.reefer_temp_shipper), normal_style)],
             ['Reefer Temp (BOL)', Paragraph(safe_str(load.reefer_temp_bol), normal_style)],

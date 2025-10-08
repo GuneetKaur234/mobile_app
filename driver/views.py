@@ -754,9 +754,16 @@ def send_email_api(request, load_id, include_pod, email_type):
         <html>
         <body>
             <h2 style="color:#2E86C1;">{email_type} Report: {load.load_number}</h2>
-            <table style="border-collapse: collapse; width: 100%;">
-                <tr><th>Field</th><th>Details</th></tr>
-                {html_rows}
+            <table style="border-collapse: collapse; width: 100%; border: 1px solid #333;">
+                <thead>
+                    <tr>
+                        <th style="border: 1px solid #333; padding: 8px; text-align: left; background-color: #f2f2f2;">Field</th>
+                        <th style="border: 1px solid #333; padding: 8px; text-align: left; background-color: #f2f2f2;">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {html_rows}
+                </tbody>
             </table>
         </body>
         </html>
