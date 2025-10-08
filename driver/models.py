@@ -151,7 +151,7 @@ class DriverLoadInfo(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.load_number} ({self.customer_name})"
+        return f"{self.pickup_number} ({self.customer_name})"
 
     # Helper methods to display email history as HTML for admin
     def pickup_emails_html(self):
