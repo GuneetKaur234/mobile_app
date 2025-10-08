@@ -703,10 +703,15 @@ def send_email_api(request, load_id, include_pod, email_type):
 
         # Fetch recipient emails
         recipient_emails = []
-        customer = Customer.objects.filter(name__iexact=load.customer_name).first()
+        # Fetch customer email under same company
+        customer = Customer.objects.filter(
+            name__iexact=load.customer_name,
+            company__name__iexact=load.driver.company
+        ).first()
         if customer and customer.email:
             recipient_emails.append(customer.email)
 
+        # Fetch company email
         company = Company.objects.filter(name__iexact=load.driver.company).first()
         if company and company.email:
             recipient_emails.append(company.email)
@@ -720,8 +725,10 @@ def send_email_api(request, load_id, include_pod, email_type):
             ("Truck Number", load.truck_number),
             ("Trailer Number", load.trailer_number),
             ("Customer", load.customer_name),
-            ("Order Number", load.order_number),
+            ("Order Number", load.order_number or ""),
+            ("Pick Number", load.pickup_number),
             ("Seal Number", load.seal_number),
+            ("Delivery Number", load.delivery_number),
             ("Pickup Notes", load.pickup_notes or ""),
             ("Delivery Notes", load.delivery_notes or ""),
             ("Pickup Date/Time", load.pickup_datetime),
@@ -760,7 +767,7 @@ def send_email_api(request, load_id, include_pod, email_type):
 
         # Send email
         email = EmailMessage(
-            subject=f"{email_type} Report: {load.load_number}",
+            subject=f"{email_type} Report: {load.pickup_number}",
             body=html_body,
             to=recipient_emails
         )
