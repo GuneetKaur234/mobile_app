@@ -73,12 +73,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # ----------------------------
 # Database
 # ----------------------------
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
 }
+
 
 # ----------------------------
 # Password validation
@@ -141,6 +141,7 @@ DEFAULT_FROM_EMAIL = f"H&H Support <{os.getenv('EMAIL_HOST_USER')}>"
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 AZURE_MAPS_KEY = os.environ.get("AZURE_MAPS_KEY")
+
 
 
 
