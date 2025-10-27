@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'driver',
     'corsheaders',
     'import_export',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -103,8 +104,16 @@ USE_TZ = True
 # Static & Media
 # ----------------------------
 STATIC_URL = 'static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Use Azure Blob Storage for media files
+DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+AZURE_ACCOUNT_NAME = os.getenv('AZURE_ACCOUNT_NAME')       # e.g., mobileappstorage
+AZURE_ACCOUNT_KEY = os.getenv('AZURE_ACCOUNT_KEY')         # from Azure portal
+AZURE_CONTAINER = os.getenv('AZURE_CONTAINER', 'media')    # container name
+AZURE_URL_EXPIRATION_SECS = None  # Optional: files are private, don't auto-expire
+
+# Optional: if you want MEDIA_URL to point to Azure
+MEDIA_URL = f'https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER}/'
 
 # ----------------------------
 # CORS
@@ -141,6 +150,7 @@ DEFAULT_FROM_EMAIL = f"H&H Support <{os.getenv('EMAIL_HOST_USER')}>"
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 AZURE_MAPS_KEY = os.environ.get("AZURE_MAPS_KEY")
+
 
 
 
