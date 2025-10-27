@@ -26,6 +26,10 @@ from .models import (
     Company
 )
 
+from django.utils import timezone
+import pytz
+
+
 # ----------------------------
 # DRIVER LANGUAGE
 # ----------------------------
@@ -719,6 +723,14 @@ def send_email_api(request, load_id, include_pod, email_type):
         if not recipient_emails:
             return Response({"error": "No recipient emails found"}, status=404)
 
+
+        # Define your timezone
+        est = pytz.timezone('America/Toronto')
+        
+        # Convert datetimes to EST
+        pickup_dt = load.pickup_datetime.astimezone(est) if load.pickup_datetime else ""
+        delivery_dt = load.delivery_datetime.astimezone(est) if load.delivery_datetime else ""
+
         # Build table rows
         rows = [
             ("Driver", load.driver.name),
@@ -731,8 +743,8 @@ def send_email_api(request, load_id, include_pod, email_type):
             ("Delivery Number", load.delivery_number),
             ("Pickup Notes", load.pickup_notes or ""),
             ("Delivery Notes", load.delivery_notes or ""),
-            ("Pickup Date/Time", load.pickup_datetime),
-            ("Delivery Date/Time", load.delivery_datetime),
+            ("Pickup Date/Time", pickup_dt),
+            ("Delivery Date/Time", delivery_dt),
             ("Current Location", location_address),
         ]
 
@@ -998,5 +1010,6 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
