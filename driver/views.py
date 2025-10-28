@@ -763,7 +763,13 @@ def send_email_api(request, load_id, include_pod, email_type):
             ])
 
         # Build HTML table
-        html_rows = "".join([f"<tr><td>{label}</td><td>{value}</td></tr>" for label, value in rows])
+        html_rows = "".join([
+            f"<tr>"
+            f"<td style='border: 1px solid #333; padding: 8px;'>{label}</td>"
+            f"<td style='border: 1px solid #333; padding: 8px;'>{value}</td>"
+            f"</tr>"
+            for label, value in rows
+        ])
         html_body = f"""
         <html>
         <body>
@@ -1042,6 +1048,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
