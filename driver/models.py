@@ -1,6 +1,10 @@
 from django.db import models
 import os
 import uuid
+from PIL import Image
+import io
+from django.core.files.base import ContentFile
+
 
 # -------------------------------
 # Helper functions for file uploads
@@ -179,6 +183,9 @@ class DriverLoadInfo(models.Model):
 # -------------------------------
 # Driver Load Photos
 # -------------------------------
+MAX_WIDTH = 800
+MAX_HEIGHT = 800
+
 class DriverLoadPhoto(models.Model):
     load = models.ForeignKey(
         DriverLoadInfo,
@@ -198,10 +205,37 @@ class DriverLoadPhoto(models.Model):
         ]
     )
     image = models.ImageField(upload_to=driver_photo_upload_to)
+    resized_image = models.ImageField(
+        upload_to='driver_uploads/resized/', 
+        null=True, 
+        blank=True
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.load.load_number} - {self.photo_type}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)  # Save original first
+
+        # Only create resized_image if not already present
+        if self.image and not self.resized_image:
+            try:
+                img = Image.open(self.image)
+                img = img.convert("RGB")
+                img.thumbnail((MAX_WIDTH, MAX_HEIGHT), Image.ANTIALIAS)
+
+                # Save to in-memory file
+                img_io = io.BytesIO()
+                img.save(img_io, format='JPEG', quality=85)
+
+                # Save to resized_image field
+                filename = self.image.name.split('/')[-1]
+                self.resized_image.save(f"resized_{filename}", ContentFile(img_io.getvalue()), save=False)
+                super().save(update_fields=['resized_image'])  # Save resized image only
+
+            except Exception as e:
+                print(f"Error resizing image {self.image.name}: {e}")
 
 # -------------------------------
 # Company & Customer
@@ -239,3 +273,4 @@ class DriverLocation(models.Model):
 
     def __str__(self):
         return f"{self.license_number} ({self.company_name}): {self.latitude}, {self.longitude} ({self.address})"
+
