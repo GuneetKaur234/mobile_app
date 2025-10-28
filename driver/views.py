@@ -28,6 +28,8 @@ from .models import (
 
 from django.utils import timezone
 import pytz
+from email.utils import make_msgid
+
 
 
 # ----------------------------
@@ -791,8 +793,38 @@ def send_email_api(request, load_id, include_pod, email_type):
             to=recipient_emails
         )
         email.content_subtype = "html"
+
+        pdf_file.seek(0)
         email.attach(pdf_file.name, pdf_file.read(), 'application/pdf')
+
+        # Inside send_email_api
+        if email_type.lower() == "pickup":
+            # Generate Message-ID and assign
+            msg_id = make_msgid()
+            email.extra_headers = {"Message-ID": msg_id}
+            
+            # Save to pickup_email_history
+            load.pickup_email_history.append({
+                "email": recipient_emails,
+                "timestamp": str(now),
+                "status": "sent",
+                "message_id": msg_id
+            })
+            load.save(update_fields=['pickup_email_history'])
+        
+        elif email_type.lower() == "delivery":
+            # Thread under first pickup email
+            if load.pickup_email_history:
+                first_msg_id = load.pickup_email_history[0].get("message_id")
+                if first_msg_id:
+                    email.extra_headers = {
+                        "In-Reply-To": first_msg_id,
+                        "References": first_msg_id
+                    }
+        
+        # Send email once
         email.send()
+
 
         return Response({
             "message": f"{email_type} email sent successfully",
@@ -1010,6 +1042,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
