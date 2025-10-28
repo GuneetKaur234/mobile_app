@@ -21,6 +21,14 @@ from reportlab.lib.units import cm
 
 import pytz
 
+from PIL import Image as PILImage
+import os
+import tempfile
+from reportlab.platypus import Image as RLImage
+from django.core.files.storage import default_storage
+
+
+
 # -----------------------------
 # Company & Customer Admin
 # -----------------------------
@@ -241,20 +249,31 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
             p.drawString(50, height-50, safe_str(photo.photo_type))
             if photo.image:
                 try:
-                    img = Image(photo.image.path)
-                    max_width = width - 100
-                    max_height = height - 100
-                    aspect = img.imageWidth / img.imageHeight
-                    if max_width / max_height > aspect:
-                        img.drawHeight = max_height
-                        img.drawWidth = max_height * aspect
-                    else:
-                        img.drawWidth = max_width
-                        img.drawHeight = max_width / aspect
-                    img.wrapOn(p, width, height)
-                    img.drawOn(p, 50, height - 50 - img.drawHeight)
-                except:
-                    p.drawString(50, height - 100, f"Cannot load image {safe_str(photo.image.name)}")
+                                # Open image from Azure Blob
+                    with default_storage.open(photo.image.name, 'rb') as f:
+                        pil_img = PILImage.open(f)
+                        pil_img = pil_img.convert('RGB')  # Ensure format
+        
+                        # Resize
+                        max_width = width - 100
+                        max_height = height - 100
+                        pil_img.thumbnail((max_width, max_height), PILImage.ANTIALIAS)
+        
+                        # Save to temp file
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                            pil_img.save(tmp.name)
+                            tmp_path = tmp.name
+        
+                        # Add resized image to PDF
+                        rl_img = RLImage(tmp_path)
+                        rl_img.wrapOn(p, width, height)
+                        rl_img.drawOn(p, 50, height - 50 - rl_img.drawHeight)
+        
+                        # Cleanup temp file
+                        os.unlink(tmp_path)
+        
+                except Exception as e:
+                    p.drawString(50, height - 100, f"Cannot load image {safe_str(photo.image.name)}: {e}")
             p.showPage()
 
         p.save()
@@ -295,4 +314,5 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
