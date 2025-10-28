@@ -19,6 +19,8 @@ from django.http import HttpResponse
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 
+import pytz
+
 # -----------------------------
 # Company & Customer Admin
 # -----------------------------
@@ -158,7 +160,7 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
 
         # Title
         p.setFont("Helvetica-Bold", 18)
-        p.drawString(50, y_start, f"Load Report: {str(load.load_number)}")
+        p.drawString(50, y_start, f"Load Report (Pickup Number: {safe_str(load.pickup_number)})")
         p.line(50, y_start-5, width-50, y_start-5)
         y_start -= 40
 
@@ -176,31 +178,41 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                     return "-"
             return str(value) if value else "-"
 
+            # Convert pickup/delivery to EST
+        est = pytz.timezone('America/New_York')
+        pickup_dt = load.pickup_datetime.astimezone(est) if load.pickup_datetime else "-"
+        delivery_dt = load.delivery_datetime.astimezone(est) if load.delivery_datetime else "-"
+
+
+        # Base data (always visible)
         data = [
             ['Field', 'Value'],
-            ['Driver', Paragraph(f"{safe_str(getattr(load.driver, 'name', '-'))} "
-                                f"({safe_str(getattr(load.driver, 'company', '-'))})", normal_style)],
+            ['Driver', Paragraph(f"{safe_str(getattr(load.driver, 'name', '-'))} ({safe_str(getattr(load.driver, 'company', '-'))})", normal_style)],
             ['Truck Number', Paragraph(safe_str(load.truck_number), normal_style)],
             ['Trailer Number', Paragraph(safe_str(load.trailer_number), normal_style)],
             ['Customer', Paragraph(safe_str(load.customer_name), normal_style)],
             ['Load Number', Paragraph(safe_str(load.load_number), normal_style)],
             ['Order Number', Paragraph(safe_str(load.order_number), normal_style)],
             ['Pickup Number', Paragraph(safe_str(load.pickup_number), normal_style)],
-            ['Pickup Datetime', Paragraph(safe_str(load.pickup_datetime), normal_style)],
+            ['Pickup Datetime', Paragraph(safe_str(pickup_dt), normal_style)],
             ['Delivery Number', Paragraph(safe_str(load.delivery_number), normal_style)],
-            ['Delivery Datetime', Paragraph(safe_str(load.delivery_datetime), normal_style)],
+            ['Delivery Datetime', Paragraph(safe_str(delivery_dt), normal_style)],
             ['Seal Number', Paragraph(safe_str(load.seal_number), normal_style)],
             ['Pickup Notes', Paragraph(safe_str(load.pickup_notes), normal_style)],
             ['Delivery Notes', Paragraph(safe_str(load.delivery_notes), normal_style)],
-            ['Reefer Pre Cool', Paragraph(safe_str(load.reefer_pre_cool), normal_style)],
-            ['Equipment Type', Paragraph(safe_str(load.equipment_type), normal_style)],  # ✅ added
-            ['Pickup Time', Paragraph(safe_str(load.pickup_datetime), normal_style)],
-            ['Delivery Time', Paragraph(safe_str(load.delivery_datetime), normal_style)],
+            ['Equipment Type', Paragraph(safe_str(load.equipment_type), normal_style)],
             ['Status', Paragraph(safe_str(load.status), normal_style)],
-            ['Reefer Temp (Shipper)', Paragraph(safe_str(load.reefer_temp_shipper), normal_style)],
-            ['Reefer Temp (BOL)', Paragraph(safe_str(load.reefer_temp_bol), normal_style)],
-            ['Reefer Temp Unit', Paragraph(safe_str(load.reefer_temp_unit), normal_style)],
         ]
+    
+        # Only show Reefer rows if equipment_type is 'reefer'
+        if getattr(load, 'equipment_type', '').lower() == 'reefer':
+            data.extend([
+                ['Reefer Pre Cool', Paragraph(safe_str(load.reefer_pre_cool), normal_style)],
+                ['Reefer Temp (Shipper)', Paragraph(safe_str(load.reefer_temp_shipper), normal_style)],
+                ['Reefer Temp (BOL)', Paragraph(safe_str(load.reefer_temp_bol), normal_style)],
+                ['Reefer Temp Unit', Paragraph(safe_str(load.reefer_temp_unit), normal_style)],
+            ])
+
 
 
         col_widths = [5*cm, width - 7*cm]
@@ -283,3 +295,4 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
