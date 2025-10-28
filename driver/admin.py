@@ -81,15 +81,17 @@ class DriverLoadPhotoInline(admin.TabularInline):
     show_change_link = False
 
     def preview(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" width="50" height="50" />', obj.image.url)
+        img_url = obj.resized_image.url if obj.resized_image else obj.image.url if obj.image else None
+        if img_url:
+            return format_html('<img src="{}" width="50" height="50" />', img_url)
         return "-"
     preview.short_description = "Preview"
 
     def download_link(self, obj):
-        if obj.image:
-            filename = obj.image.name.split('/')[-1]
-            return format_html('<a href="{}" target="_blank">{}</a>', obj.image.url, filename)
+        file_url = obj.resized_image.url if obj.resized_image else obj.image.url if obj.image else None
+        if file_url:
+            filename = os.path.basename(file_url)
+            return format_html('<a href="{}" target="_blank">{}</a>', file_url, filename)
         return "-"
     download_link.short_description = "Download"
 
@@ -250,8 +252,10 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
             if photo.image:
                 try:
                                 # Open image from Azure Blob
-                    with default_storage.open(photo.image.name, 'rb') as f:
-                        pil_img = PILImage.open(f)
+                    photo_file = photo.resized_image if photo.resized_image else photo.image
+                    if photo_file:
+                        with default_storage.open(photo_file.name, 'rb') as f:
+                            pil_img = PILImage.open(f)
                         pil_img = pil_img.convert('RGB')  # Ensure format
         
                         # Resize
@@ -314,5 +318,6 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
