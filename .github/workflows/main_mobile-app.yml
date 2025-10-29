@@ -66,7 +66,7 @@ jobs:
           echo "Running migrations safely..."
           
           # Fake only 0017 if resized_image exists
-          python manage.py migrate driver 0016 --fake || true
+          python manage.py migrate driver 0017 --fake || true
           
           # Then migrate normally (this will create email_thread_id)
           python manage.py migrate --noinput
@@ -88,3 +88,4 @@ jobs:
           slot-name: 'Production'
           package: ./release
           clean: true
+
