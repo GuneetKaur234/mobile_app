@@ -805,29 +805,20 @@ def send_email_api(request, load_id, include_pod, email_type):
 
         # Inside send_email_api
         if email_type.lower() == "pickup":
-            # Generate Message-ID and assign
+            # First email for this load → create a new thread
             msg_id = make_msgid()
             email.extra_headers = {"Message-ID": msg_id}
-            
-            # Save to pickup_email_history
-            load.pickup_email_history.append({
-                "email": recipient_emails,
-                "timestamp": str(now),
-                "status": "sent",
-                "message_id": msg_id
-            })
-            load.save(update_fields=['pickup_email_history'])
+            load.email_thread_id = msg_id
+            load.save(update_fields=['email_thread_id'])
         
         elif email_type.lower() == "delivery":
-            # Thread under first pickup email
-            if load.pickup_email_history:
-                first_msg_id = load.pickup_email_history[0].get("message_id")
-                if first_msg_id:
-                    email.extra_headers = {
-                        "In-Reply-To": first_msg_id,
-                        "References": first_msg_id
-                    }
-        
+            # Reuse the existing thread (reply)
+            if load.email_thread_id:
+                email.extra_headers = {
+                    "In-Reply-To": load.email_thread_id,
+                    "References": load.email_thread_id
+                }
+
         # Send email once
         email.send()
 
@@ -1048,6 +1039,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
