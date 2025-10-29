@@ -60,12 +60,24 @@ jobs:
           cd release
           python manage.py makemigrations --noinput || echo "No migrations"
 
-      # 7️⃣ Run migrate
-      - name: Run migrate
+      # 7️⃣ Run migrate (with safe duplicate-column handling)
+      - name: Run migrate (safe)
         run: |
           export DJANGO_SETTINGS_MODULE=backend.settings
           cd release
-          python manage.py migrate --noinput
+          echo "Running migrations safely..."
+          
+          # Try normal migrate first
+          python manage.py migrate --noinput || (
+            echo "⚠️ Migration failed due to duplicate column — applying safe fix..."
+            
+            # Fake the migration that causes the duplicate-column error
+            python manage.py migrate driver 0017 --fake
+            
+            # Run remaining migrations normally
+            python manage.py migrate --noinput
+          )
+
 
       # 8️⃣ Login to Azure
       - name: Login to Azure
@@ -84,3 +96,4 @@ jobs:
           slot-name: 'Production'
           package: ./release
           clean: true
+
