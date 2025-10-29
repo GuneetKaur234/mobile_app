@@ -40,7 +40,9 @@ jobs:
         run: |
           rm -rf release
           mkdir release
+          # Copy main project files directly to release
           cp -r backend driver manage.py requirements.txt release/
+          # Optional: DB + media
           if [ -f db.sqlite3 ]; then cp db.sqlite3 release/; fi
           if [ -d media ]; then cp -r media release/; fi
 
@@ -58,17 +60,11 @@ jobs:
           cd release
           python manage.py makemigrations --noinput || echo "No migrations"
 
-      # 7️⃣ Run migrations safely
-      - name: Run migrate (safe)
+      # 7️⃣ Run migrate
+      - name: Run migrate
         run: |
           export DJANGO_SETTINGS_MODULE=backend.settings
           cd release
-          echo "Running migrations safely..."
-          
-          # Fake only 0017 if resized_image exists
-          python manage.py migrate driver 0017 --fake || true
-          
-          # Then migrate normally (this will create email_thread_id)
           python manage.py migrate --noinput
 
       # 8️⃣ Login to Azure
@@ -88,4 +84,3 @@ jobs:
           slot-name: 'Production'
           package: ./release
           clean: true
-
