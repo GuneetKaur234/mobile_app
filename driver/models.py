@@ -150,6 +150,7 @@ class DriverLoadInfo(models.Model):
     delivery_email_history = models.JSONField(default=list, blank=True)
     status = models.CharField(max_length=20, choices=LOAD_STATUS_CHOICES, default='pending_pickup')
     last_notification_sent = models.DateTimeField(null=True, blank=True)
+    email_thread_id = models.CharField(max_length=255, null=True, blank=True, help_text="Unique Message-ID base for threading")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -273,4 +274,5 @@ class DriverLocation(models.Model):
 
     def __str__(self):
         return f"{self.license_number} ({self.company_name}): {self.latitude}, {self.longitude} ({self.address})"
+
 
