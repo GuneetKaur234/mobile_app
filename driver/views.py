@@ -763,6 +763,14 @@ def send_email_api(request, load_id, include_pod, email_type):
                 ("Temperature Unit", getattr(load, "reefer_temp_unit", "")),
             ])
 
+        # Choose the right display number depending on email type
+        if email_type.lower() == "pickup":
+            display_number = load.pickup_number
+        elif email_type.lower() == "delivery":
+            display_number = load.delivery_number
+        else:
+            display_number = load.load_number
+
         # Build HTML table
         html_rows = "".join([
             f"<tr>"
@@ -774,7 +782,7 @@ def send_email_api(request, load_id, include_pod, email_type):
         html_body = f"""
         <html>
         <body>
-            <h2 style="color:#2E86C1;">{email_type} Report: {load.load_number}</h2>
+            <h2 style="color:#2E86C1;">{email_type} Report: {display_number}</h2>
             <table style="border-collapse: collapse; width: 100%; border: 1px solid #333;">
                 <thead>
                     <tr>
@@ -818,7 +826,7 @@ def send_email_api(request, load_id, include_pod, email_type):
         current_message_id = f"<{uuid.uuid4()}@{domain}>"
         
         # ✅ Keep subject consistent across all emails for the same load
-        email.subject = f"Load Update: {load.pickup_number or load.load_number} ({email_type})"
+        email.subject = f"Load Update: Pickup# {load.pickup_number}"
         
         # ✅ Set Gmail-threading headers
         email.extra_headers = {
@@ -1046,6 +1054,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
