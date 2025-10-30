@@ -29,6 +29,7 @@ from .models import (
 from django.utils import timezone
 import pytz
 from email.utils import make_msgid
+import uuid
 
 
 
@@ -803,22 +804,28 @@ def send_email_api(request, load_id, include_pod, email_type):
         pdf_file.seek(0)
         email.attach(pdf_file.name, pdf_file.read(), 'application/pdf')
 
-        # Inside send_email_api
-        if email_type.lower() == "pickup":
-            # First email for this load → create a new thread
-            msg_id = make_msgid()
-            email.extra_headers = {"Message-ID": msg_id}
-            load.email_thread_id = msg_id
-            load.save(update_fields=['email_thread_id'])
+        # ---------------------------
+        # Gmail Threading Enhancement
+        # ---------------------------
+        domain = "gmail.com"  # since you are using Gmail
         
-        elif email_type.lower() == "delivery":
-            # Reuse the existing thread (reply)
-            if load.email_thread_id:
-                email.extra_headers = {
-                    "In-Reply-To": load.email_thread_id,
-                    "References": load.email_thread_id
-                }
-
+        # If this is the first email for this load, generate and store a base thread ID
+        if not load.email_thread_id:
+            load.email_thread_id = f"<{uuid.uuid4()}@{domain}>"
+            load.save(update_fields=["email_thread_id"])
+        
+        # Always create a new message ID for this specific email
+        current_message_id = f"<{uuid.uuid4()}@{domain}>"
+        
+        # ✅ Keep subject consistent across all emails for the same load
+        email.subject = f"Load Update: {load.pickup_number or load.load_number} ({email_type})"
+        
+        # ✅ Set Gmail-threading headers
+        email.extra_headers = {
+            "Message-ID": current_message_id,
+            "In-Reply-To": load.email_thread_id,
+            "References": load.email_thread_id,
+        }
         # Send email once
         email.send()
 
@@ -1039,6 +1046,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
