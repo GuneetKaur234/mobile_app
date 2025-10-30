@@ -158,6 +158,30 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         ]
         return custom_urls + urls
 
+
+    def get_pil_image_from_storage(self, photo_file):
+        """
+        Safely open an image stored on Azure Blob via Django’s default_storage.
+        Works even when the blob container is private.
+        """
+        from PIL import Image as PILImage
+        import tempfile
+        from django.core.files.storage import default_storage
+
+        try:
+            # Download file from Azure to temp file
+            with default_storage.open(photo_file.name, 'rb') as blob_file:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                    tmp.write(blob_file.read())
+                    tmp.flush()
+                    pil_img = PILImage.open(tmp.name)
+                    pil_img.load()
+                    return pil_img, tmp.name  # return temp path too (for later cleanup)
+        except Exception as e:
+            print(f"⚠️ Error loading image {photo_file.name}: {e}")
+            return None, None
+
+
     # -----------------------------
     # PDF Generation (Corrected)
     # -----------------------------
@@ -254,27 +278,29 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                                 # Open image from Azure Blob
                     photo_file = photo.resized_image if photo.resized_image else photo.image
                     if photo_file:
-                        with default_storage.open(photo_file.name, 'rb') as f:
-                            pil_img = PILImage.open(f)
-                        pil_img = pil_img.convert('RGB')  # Ensure format
-        
-                        # Resize
-                        max_width = width - 100
-                        max_height = height - 100
-                        pil_img.thumbnail((max_width, max_height), PILImage.ANTIALIAS)
-        
-                        # Save to temp file
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-                            pil_img.save(tmp.name)
-                            tmp_path = tmp.name
-        
-                        # Add resized image to PDF
-                        rl_img = RLImage(tmp_path)
-                        rl_img.wrapOn(p, width, height)
-                        rl_img.drawOn(p, 50, height - 50 - rl_img.drawHeight)
-        
-                        # Cleanup temp file
-                        os.unlink(tmp_path)
+                        # Use helper to safely load from Azure
+                        pil_img, tmp_path = self.get_pil_image_from_storage(photo_file)
+                        if pil_img:
+                            pil_img = pil_img.convert('RGB')
+                    
+                            # Resize
+                            max_width = width - 100
+                            max_height = height - 100
+                            pil_img.thumbnail((max_width, max_height), PILImage.LANCZOS)
+                    
+                            # Save again (ensure resized image is what gets inserted)
+                            pil_img.save(tmp_path)
+                    
+                            # Add to PDF
+                            rl_img = RLImage(tmp_path)
+                            rl_img.wrapOn(p, width, height)
+                            rl_img.drawOn(p, 50, height - 50 - rl_img.drawHeight)
+                    
+                            # Cleanup temp file
+                            os.unlink(tmp_path)
+                        else:
+                            p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}")
+
         
                 except Exception as e:
                     p.drawString(50, height - 100, f"Cannot load image {safe_str(photo.image.name)}: {e}")
@@ -318,6 +344,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
