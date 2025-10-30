@@ -168,6 +168,15 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         width, height = A4
         y_start = height - 50
 
+                # Helper to safely convert any value to string
+        def safe_str(value):
+            if callable(value):
+                try:
+                    return str(value())
+                except:
+                    return "-"
+            return str(value) if value else "-"
+
         # Title
         p.setFont("Helvetica-Bold", 18)
         p.drawString(50, y_start, f"Load Report (Pickup Number: {safe_str(load.pickup_number)})")
@@ -178,15 +187,6 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         normal_style = styles['Normal']
         normal_style.fontSize = 10
         normal_style.leading = 12
-
-        # Helper to safely convert any value to string
-        def safe_str(value):
-            if callable(value):
-                try:
-                    return str(value())
-                except:
-                    return "-"
-            return str(value) if value else "-"
 
             # Convert pickup/delivery to EST
         est = pytz.timezone('America/New_York')
@@ -318,6 +318,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
