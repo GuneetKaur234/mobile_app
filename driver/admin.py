@@ -27,6 +27,9 @@ import tempfile
 from reportlab.platypus import Image as RLImage
 from django.core.files.storage import default_storage
 
+from urllib.parse import quote
+import requests
+
 
 
 # -----------------------------
@@ -99,6 +102,24 @@ class DriverLoadPhotoInline(admin.TabularInline):
 # -----------------------------
 # DriverLoadInfo Admin
 # -----------------------------
+
+# Read SAS token from environment variable
+AZURE_SAS_TOKEN = os.environ.get("AZURE_SAS_TOKEN")
+AZURE_ACCOUNT_NAME = os.environ.get("AZURE_ACCOUNT_NAME")  # must match your storage account
+AZURE_CONTAINER = os.environ.get("AZURE_CONTAINER", "media")  # default to 'media'
+
+def get_sas_url(file_name):
+        """
+        Build a full URL to access the file via SAS token.
+        Handles encoding spaces or special characters in the file name.
+        """
+        if not file_name or not AZURE_SAS_TOKEN:
+            return None
+        file_name_encoded = quote(file_name)
+        return f"https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER}/{file_name_encoded}?{AZURE_SAS_TOKEN}"
+
+
+
 @admin.register(DriverLoadInfo)
 class DriverLoadInfoAdmin(ImportExportModelAdmin):
     resource_class = DriverLoadInfoResource
@@ -140,6 +161,7 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
 
     list_filter = ('status', 'driver__company', 'customer_name')
 
+
     def driver_company(self, obj):
         return obj.driver.company if obj.driver else "-"
     driver_company.short_description = "Driver's Company"
@@ -161,24 +183,28 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
 
     def get_pil_image_from_storage(self, photo_file):
         """
-        Safely open an image stored on Azure Blob via Django’s default_storage.
-        Works even when the blob container is private.
+        Load an image from Azure Blob Storage using SAS URL and return PIL image.
         """
-        from PIL import Image as PILImage
-        import tempfile
-        from django.core.files.storage import default_storage
-
         try:
-            # Download file from Azure to temp file
-            with default_storage.open(photo_file.name, 'rb') as blob_file:
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-                    tmp.write(blob_file.read())
-                    tmp.flush()
-                    pil_img = PILImage.open(tmp.name)
-                    pil_img.load()
-                    return pil_img, tmp.name  # return temp path too (for later cleanup)
+            url = get_sas_url(photo_file.name)
+            if not url:
+                return None, None
+    
+            # Download image to temp file
+            response = requests.get(url, stream=True)
+            if response.status_code != 200:
+                print(f"⚠️ Failed to fetch {photo_file.name} via SAS: {response.status_code}")
+                return None, None
+    
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                for chunk in response.iter_content(chunk_size=8192):
+                    tmp.write(chunk)
+                tmp.flush()
+                pil_img = PILImage.open(tmp.name)
+                pil_img.load()
+                return pil_img, tmp.name
         except Exception as e:
-            print(f"⚠️ Error loading image {photo_file.name}: {e}")
+            print(f"⚠️ Error loading image {photo_file.name} via SAS: {e}")
             return None, None
 
 
@@ -344,6 +370,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
