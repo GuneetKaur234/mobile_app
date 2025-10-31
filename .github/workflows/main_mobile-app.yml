@@ -15,8 +15,18 @@ jobs:
     permissions:
       id-token: write
       contents: read
+
     env:
+      # 🔹 Database
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # 🔹 Azure Blob Storage settings
+      AZURE_ACCOUNT_NAME: ${{ secrets.AZURE_ACCOUNT_NAME }}
+      AZURE_ACCOUNT_KEY: ${{ secrets.AZURE_ACCOUNT_KEY }}
+      AZURE_CONTAINER: ${{ secrets.AZURE_CONTAINER }}
+      # (Optional if using SAS token instead of key)
+      # AZURE_SAS_TOKEN: ${{ secrets.AZURE_SAS_TOKEN }}
+
+      DJANGO_SETTINGS_MODULE: backend.settings
 
     steps:
       # 1️⃣ Checkout repo
@@ -84,3 +94,4 @@ jobs:
           slot-name: 'Production'
           package: ./release
           clean: true
+
