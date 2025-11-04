@@ -1,5 +1,8 @@
 from storages.backends.azure_storage import AzureStorage
 import os
+from io import BytesIO
+from azure.storage.blob import BlobServiceClient  # <-- add this import
+
 
 class AzureMediaStorage(AzureStorage):
     account_name = os.getenv("AZURE_ACCOUNT_NAME")
