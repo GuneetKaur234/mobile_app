@@ -27,11 +27,6 @@ import tempfile
 from reportlab.platypus import Image as RLImage
 from django.core.files.storage import default_storage
 
-from urllib.parse import quote
-import requests
-
-
-
 # -----------------------------
 # Company & Customer Admin
 # -----------------------------
@@ -42,11 +37,9 @@ class CompanyAdmin(ImportExportModelAdmin):
     search_fields = ('name', 'email', 'scac_code')
 
     def save_model(self, request, obj, form, change):
-        # Ensure SCAC & Company uniqueness match
         if Company.objects.filter(scac_code=obj.scac_code).exclude(pk=obj.pk).exists():
             from django.core.exceptions import ValidationError
             raise ValidationError(f"SCAC code '{obj.scac_code}' already exists for another company.")
-
         super().save_model(request, obj, form, change)
 
 
@@ -102,24 +95,6 @@ class DriverLoadPhotoInline(admin.TabularInline):
 # -----------------------------
 # DriverLoadInfo Admin
 # -----------------------------
-
-# Read SAS token from environment variable
-AZURE_SAS_TOKEN = os.environ.get("AZURE_SAS_TOKEN")
-AZURE_ACCOUNT_NAME = os.environ.get("AZURE_ACCOUNT_NAME")  # must match your storage account
-AZURE_CONTAINER = os.environ.get("AZURE_CONTAINER", "media")  # default to 'media'
-
-def get_sas_url(file_name):
-        """
-        Build a full URL to access the file via SAS token.
-        Handles encoding spaces or special characters in the file name.
-        """
-        if not file_name or not AZURE_SAS_TOKEN:
-            return None
-        file_name_encoded = quote(file_name)
-        return f"https://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/{AZURE_CONTAINER}/{file_name_encoded}?{AZURE_SAS_TOKEN}"
-
-
-
 @admin.register(DriverLoadInfo)
 class DriverLoadInfoAdmin(ImportExportModelAdmin):
     resource_class = DriverLoadInfoResource
@@ -141,7 +116,7 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
             'load_number', 'order_number', 'pickup_number',
             'pickup_datetime', 'delivery_number', 'delivery_datetime',
             'seal_number', 'pickup_notes', 'delivery_notes', 'reefer_pre_cool',
-            'reefer_temp_shipper', 'reefer_temp_bol', 'reefer_temp_unit', 'equipment_type',  # <-- new fields
+            'reefer_temp_shipper', 'reefer_temp_bol', 'reefer_temp_unit', 'equipment_type',
             'pickup_emails_html', 'delivery_emails_html', 'status',
             'download_pdf_button', 'pulp_reason',
         )}),
@@ -161,7 +136,6 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
 
     list_filter = ('status', 'driver__company', 'customer_name')
 
-
     def driver_company(self, obj):
         return obj.driver.company if obj.driver else "-"
     driver_company.short_description = "Driver's Company"
@@ -180,36 +154,28 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         ]
         return custom_urls + urls
 
-
+    # -----------------------------
+    # Helper to load image directly from Azure via default_storage
+    # -----------------------------
     def get_pil_image_from_storage(self, photo_file):
-        """
-        Load an image from Azure Blob Storage using SAS URL and return PIL image.
-        """
         try:
-            url = get_sas_url(photo_file.name)
-            if not url:
+            if not photo_file:
                 return None, None
-    
-            # Download image to temp file
-            response = requests.get(url, stream=True)
-            if response.status_code != 200:
-                print(f"⚠️ Failed to fetch {photo_file.name} via SAS: {response.status_code}")
-                return None, None
-    
+
+            # Read file bytes from Azure storage
+            file_bytes = default_storage.open(photo_file.name, 'rb')
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-                for chunk in response.iter_content(chunk_size=8192):
-                    tmp.write(chunk)
+                tmp.write(file_bytes.read())
                 tmp.flush()
                 pil_img = PILImage.open(tmp.name)
                 pil_img.load()
                 return pil_img, tmp.name
         except Exception as e:
-            print(f"⚠️ Error loading image {photo_file.name} via SAS: {e}")
+            print(f"⚠️ Error loading image {photo_file.name} from storage: {e}")
             return None, None
 
-
     # -----------------------------
-    # PDF Generation (Corrected)
+    # PDF Generation
     # -----------------------------
     def download_load_pdf(self, request, load_id):
         load = self.get_object(request, load_id)
@@ -218,7 +184,6 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         width, height = A4
         y_start = height - 50
 
-                # Helper to safely convert any value to string
         def safe_str(value):
             if callable(value):
                 try:
@@ -238,13 +203,11 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         normal_style.fontSize = 10
         normal_style.leading = 12
 
-            # Convert pickup/delivery to EST
         est = pytz.timezone('America/New_York')
         pickup_dt = load.pickup_datetime.astimezone(est) if load.pickup_datetime else "-"
         delivery_dt = load.delivery_datetime.astimezone(est) if load.delivery_datetime else "-"
 
-
-        # Base data (always visible)
+        # Base data
         data = [
             ['Field', 'Value'],
             ['Driver', Paragraph(f"{safe_str(getattr(load.driver, 'name', '-'))} ({safe_str(getattr(load.driver, 'company', '-'))})", normal_style)],
@@ -263,8 +226,7 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
             ['Equipment Type', Paragraph(safe_str(load.equipment_type), normal_style)],
             ['Status', Paragraph(safe_str(load.status), normal_style)],
         ]
-    
-        # Only show Reefer rows if equipment_type is 'reefer'
+
         if getattr(load, 'equipment_type', '').lower() == 'reefer':
             data.extend([
                 ['Reefer Pre Cool', Paragraph(safe_str(load.reefer_pre_cool), normal_style)],
@@ -272,8 +234,6 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                 ['Reefer Temp (BOL)', Paragraph(safe_str(load.reefer_temp_bol), normal_style)],
                 ['Reefer Temp Unit', Paragraph(safe_str(load.reefer_temp_unit), normal_style)],
             ])
-
-
 
         col_widths = [5*cm, width - 7*cm]
 
@@ -291,7 +251,6 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
 
         table.wrapOn(p, width-100, height)
         table.drawOn(p, 50, y_start - table._height)
-
         p.showPage()
 
         # Images
@@ -299,37 +258,25 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         for photo in photos:
             p.setFont("Helvetica-Bold", 14)
             p.drawString(50, height-50, safe_str(photo.photo_type))
-            if photo.image:
+            photo_file = photo.resized_image if photo.resized_image else photo.image
+            if photo_file:
                 try:
-                                # Open image from Azure Blob
-                    photo_file = photo.resized_image if photo.resized_image else photo.image
-                    if photo_file:
-                        # Use helper to safely load from Azure
-                        pil_img, tmp_path = self.get_pil_image_from_storage(photo_file)
-                        if pil_img:
-                            pil_img = pil_img.convert('RGB')
-                    
-                            # Resize
-                            max_width = width - 100
-                            max_height = height - 100
-                            pil_img.thumbnail((max_width, max_height), PILImage.LANCZOS)
-                    
-                            # Save again (ensure resized image is what gets inserted)
-                            pil_img.save(tmp_path)
-                    
-                            # Add to PDF
-                            rl_img = RLImage(tmp_path)
-                            rl_img.wrapOn(p, width, height)
-                            rl_img.drawOn(p, 50, height - 50 - rl_img.drawHeight)
-                    
-                            # Cleanup temp file
-                            os.unlink(tmp_path)
-                        else:
-                            p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}")
+                    pil_img, tmp_path = self.get_pil_image_from_storage(photo_file)
+                    if pil_img:
+                        pil_img = pil_img.convert('RGB')
+                        max_width = width - 100
+                        max_height = height - 100
+                        pil_img.thumbnail((max_width, max_height), PILImage.LANCZOS)
+                        pil_img.save(tmp_path)
 
-        
+                        rl_img = RLImage(tmp_path)
+                        rl_img.wrapOn(p, width, height)
+                        rl_img.drawOn(p, 50, height - 50 - rl_img.drawHeight)
+                        os.unlink(tmp_path)
+                    else:
+                        p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}")
                 except Exception as e:
-                    p.drawString(50, height - 100, f"Cannot load image {safe_str(photo.image.name)}: {e}")
+                    p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}: {e}")
             p.showPage()
 
         p.save()
@@ -370,9 +317,3 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
-
-
-
-
-
-
