@@ -31,6 +31,7 @@ import pytz
 from email.utils import make_msgid
 import uuid
 
+from .tasks import send_pickup_or_delivery_email
 
 
 # ----------------------------
@@ -680,12 +681,23 @@ def get_customers_for_driver_api(request):
 # SEND PICKUP / DELIVERY EMAILS
 # ----------------------------
 @api_view(['POST'])
-def send_pickup_email_api(request, load_id):
-    return send_email_api(request, load_id=load_id, include_pod=False, email_type="Pickup")
+def send_pickup_email(request):
+    load_id = request.data.get("load_id")
+    if not load_id:
+        return Response({"error": "load_id is required"}, status=400)
+    
+    send_pickup_or_delivery_email.delay(load_id, "pickup")
+    return Response({"message": "Pickup email queued for sending"}, status=202)
+
 
 @api_view(['POST'])
-def send_delivery_email_api(request, load_id):
-    return send_email_api(request, load_id=load_id, include_pod=True, email_type="Delivery")
+def send_delivery_email(request):
+    load_id = request.data.get("load_id")
+    if not load_id:
+        return Response({"error": "load_id is required"}, status=400)
+    
+    send_pickup_or_delivery_email.delay(load_id, "delivery")
+    return Response({"message": "Delivery email queued for sending"}, status=202)
 
 
 def send_email_api(request, load_id, include_pod, email_type):
@@ -1054,6 +1066,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
