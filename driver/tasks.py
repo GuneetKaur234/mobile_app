@@ -1,8 +1,7 @@
-# driver/tasks.py
 from celery import shared_task
 from django.core.mail import EmailMessage
 from django.conf import settings
-from .models import Load, DriverLoadInfo
+from .models import DriverLoadInfo
 from .utils import generate_load_pdf
 
 
@@ -13,23 +12,20 @@ def send_pickup_or_delivery_email(self, load_id, email_type):
     Uses your generate_load_pdf() utility to attach photos/PODs to the email.
     """
     try:
-        load = Load.objects.get(id=load_id)
+        load = DriverLoadInfo.objects.get(id=load_id)  # <-- fixed here
 
-        # Determine whether to include PODs based on email type
         include_pod = (email_type == "delivery")
-
-        # Generate the PDF
         pdf_file = generate_load_pdf(load, include_pod=include_pod)
 
-        # Build email
         subject = f"{email_type.title()} confirmation for Load #{load.load_number}"
         body = (
-            f"Hi {load.customer.name if hasattr(load, 'customer') else ''},\n\n"
+            f"Hi {load.customer_name},\n\n"
             f"Please find attached the {email_type} confirmation PDF for Load #{load.load_number}."
         )
 
         to_emails = []
-        if hasattr(load, 'customer') and load.customer.email:
+        # Use email from related customer if available
+        if hasattr(load, 'customer') and getattr(load.customer, 'email', None):
             to_emails.append(load.customer.email)
 
         if not to_emails:
