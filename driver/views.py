@@ -681,8 +681,7 @@ def get_customers_for_driver_api(request):
 # SEND PICKUP / DELIVERY EMAILS
 # ----------------------------
 @api_view(['POST'])
-def send_pickup_email(request):
-    load_id = request.data.get("load_id")
+def send_pickup_email(request, load_id):
     if not load_id:
         return Response({"error": "load_id is required"}, status=400)
     
@@ -691,8 +690,7 @@ def send_pickup_email(request):
 
 
 @api_view(['POST'])
-def send_delivery_email(request):
-    load_id = request.data.get("load_id")
+def send_delivery_email(request, load_id):
     if not load_id:
         return Response({"error": "load_id is required"}, status=400)
     
@@ -1066,6 +1064,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
