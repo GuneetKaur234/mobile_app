@@ -1,31 +1,55 @@
+# driver/tasks.py
 from celery import shared_task
-from django.utils import timezone
-from .models import DriverLoadInfo
-from .notifications import send_push_notification
+from django.core.mail import EmailMessage
+from django.conf import settings
+from .models import Load, DriverLoadInfo
+from .utils import generate_load_pdf
 
-@shared_task
-def notify_drivers_in_transit():
+
+@shared_task(bind=True, max_retries=3)
+def send_pickup_or_delivery_email(self, load_id, email_type):
     """
-    Send push notifications to all drivers whose loads are 'in_transit'.
-    Runs twice daily (10 AM and 6 PM) via Celery Beat.
+    email_type: 'pickup' or 'delivery'
+    Uses your generate_load_pdf() utility to attach photos/PODs to the email.
     """
-    now = timezone.localtime()
+    try:
+        load = Load.objects.get(id=load_id)
 
-    # Only run at 10 AM or 6 PM
-    if now.hour not in [10, 18]:
-        return
+        # Determine whether to include PODs based on email type
+        include_pod = (email_type == "delivery")
 
-    # Fetch all in-transit loads
-    loads = DriverLoadInfo.objects.filter(status='in_transit')
-    for load in loads:
-        # Skip if already sent in this hour
-        last_sent = load.last_notification_sent
-        if last_sent and last_sent.date() == now.date() and last_sent.hour == now.hour:
-            continue
+        # Generate the PDF
+        pdf_file = generate_load_pdf(load, include_pod=include_pod)
 
-        # Send notification
-        send_push_notification(load.driver, f"Reminder: Load {load.load_number} is in transit.")
+        # Build email
+        subject = f"{email_type.title()} confirmation for Load #{load.load_number}"
+        body = (
+            f"Hi {load.customer.name if hasattr(load, 'customer') else ''},\n\n"
+            f"Please find attached the {email_type} confirmation PDF for Load #{load.load_number}."
+        )
 
-        # Update last_notification_sent
-        load.last_notification_sent = now
-        load.save()
+        to_emails = []
+        if hasattr(load, 'customer') and load.customer.email:
+            to_emails.append(load.customer.email)
+
+        if not to_emails:
+            print(f"[DEBUG] No recipient email found for load {load.id}")
+            return f"No recipient email for load {load.id}"
+
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=to_emails,
+        )
+
+        email.attach(pdf_file.name, pdf_file.read(), "application/pdf")
+        email.send(fail_silently=False)
+
+        print(f"[DEBUG] {email_type.title()} email sent successfully for load {load.id}")
+        return f"{email_type.title()} email sent successfully for load {load.id}"
+
+    except Exception as e:
+        print(f"[DEBUG] Error in send_pickup_or_delivery_email: {e}")
+        self.retry(exc=e, countdown=10)
+        return f"Error sending {email_type} email for load {load_id}: {e}"
