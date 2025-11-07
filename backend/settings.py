@@ -155,35 +155,28 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 AZURE_MAPS_KEY = os.environ.get("AZURE_MAPS_KEY")
 
 
-# ----------------------------
-# Celery (Azure Redis SSL)
-# ----------------------------
 import ssl
-import os
 
 REDIS_HOST = os.getenv("REDIS_HOST", "driverapp.redis.cache.windows.net")
-REDIS_PORT = os.getenv("REDIS_PORT", "6380")  # Azure Redis SSL port
+REDIS_PORT = os.getenv("REDIS_PORT", "6380")
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
+REDIS_USERNAME = "default"
 
-# Redis URLs
-CELERY_BROKER_URL = f"rediss://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
+CELERY_BROKER_URL = f"rediss://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# SSL options for Azure Redis
 REDIS_SSL_OPTIONS = {
-    "ssl_cert_reqs": ssl.CERT_REQUIRED,  # Validates server certificate
-    # Optional: provide CA certs path if needed
-    # "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt"
+    "ssl_cert_reqs": ssl.CERT_REQUIRED
 }
 
 CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
 CELERY_RESULT_BACKEND_USE_SSL = REDIS_SSL_OPTIONS
 
-# Task settings
 CELERY_TIMEZONE = "America/Toronto"
 CELERY_ENABLE_UTC = False
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes max per task
+CELERY_TASK_TIME_LIMIT = 30 * 60
+
 
 
 
