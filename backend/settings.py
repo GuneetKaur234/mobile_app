@@ -161,22 +161,29 @@ AZURE_MAPS_KEY = os.environ.get("AZURE_MAPS_KEY")
 import ssl
 
 REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = os.getenv("REDIS_PORT", "6380")  # Azure Redis SSL port
+REDIS_PORT = os.getenv("REDIS_PORT", "6380")  # Azure Redis uses port 6380 for SSL
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 
-# Azure Redis uses SSL — build the secure URL dynamically
+# Build SSL Redis URLs for Celery
 CELERY_BROKER_URL = f"rediss://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# Required for SSL connections on Azure Redis
-BROKER_USE_SSL = {"ssl_cert_reqs": ssl.CERT_NONE}
-CELERY_BROKER_USE_SSL = BROKER_USE_SSL
-CELERY_REDIS_BACKEND_USE_SSL = {"ssl_cert_reqs": ssl.CERT_NONE}
-CELERY_RESULT_BACKEND_USE_SSL = CELERY_REDIS_BACKEND_USE_SSL
+# Explicit SSL options for both broker and backend
+CELERY_BROKER_USE_SSL = {
+    "ssl_cert_reqs": ssl.CERT_NONE,   # Disable cert verification (works for Azure)
+}
 
-# Optional – timezone consistency
+CELERY_RESULT_BACKEND_USE_SSL = {
+    "ssl_cert_reqs": ssl.CERT_NONE,
+}
+
+# Timezone and task settings
 CELERY_TIMEZONE = "America/Toronto"
 CELERY_ENABLE_UTC = False
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # Optional: 30 minutes max per task
+
+
 
 
 
