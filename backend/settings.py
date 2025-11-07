@@ -156,19 +156,27 @@ AZURE_MAPS_KEY = os.environ.get("AZURE_MAPS_KEY")
 
 
 # ----------------------------
-# Celery (Redis via SSL for Azure)
+# Celery (Azure Redis SSL)
 # ----------------------------
 import ssl
 
-# Use Azure Redis connection string (set in Azure App Settings)
-# Example: rediss://<username>:<password>@<your-redis-host>:6380/0
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "rediss://<your_redis_host>:6380/0?ssl_cert_reqs=CERT_NONE")
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = os.getenv("REDIS_PORT", "6380")  # Azure Redis SSL port
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
+
+# Azure Redis uses SSL — build the secure URL dynamically
+CELERY_BROKER_URL = f"rediss://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# Make sure Celery timezone matches Django
-CELERY_TIMEZONE = 'America/Toronto'
-CELERY_ENABLE_UTC = False
+# Required for SSL connections on Azure Redis
+BROKER_USE_SSL = {
+    "ssl_cert_reqs": ssl.CERT_NONE
+}
+CELERY_BROKER_USE_SSL = BROKER_USE_SSL
 
+# Optional – timezone consistency
+CELERY_TIMEZONE = "America/Toronto"
+CELERY_ENABLE_UTC = False
 
 
 
