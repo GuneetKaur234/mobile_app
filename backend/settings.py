@@ -155,6 +155,20 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 AZURE_MAPS_KEY = os.environ.get("AZURE_MAPS_KEY")
 
 
+# ----------------------------
+# Celery (Redis via SSL for Azure)
+# ----------------------------
+import ssl
+
+# Use Azure Redis connection string (set in Azure App Settings)
+# Example: rediss://<username>:<password>@<your-redis-host>:6380/0
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "rediss://<your_redis_host>:6380/0?ssl_cert_reqs=CERT_NONE")
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+
+# Make sure Celery timezone matches Django
+CELERY_TIMEZONE = 'America/Toronto'
+CELERY_ENABLE_UTC = False
+
 
 
 
