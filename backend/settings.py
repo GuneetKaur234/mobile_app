@@ -169,16 +169,14 @@ CELERY_BROKER_URL = f"rediss://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 # Required for SSL connections on Azure Redis
-BROKER_USE_SSL = {
-    "ssl_cert_reqs": ssl.CERT_NONE
-}
+BROKER_USE_SSL = {"ssl_cert_reqs": ssl.CERT_NONE}
 CELERY_BROKER_USE_SSL = BROKER_USE_SSL
+CELERY_REDIS_BACKEND_USE_SSL = {"ssl_cert_reqs": ssl.CERT_NONE}
+CELERY_RESULT_BACKEND_USE_SSL = CELERY_REDIS_BACKEND_USE_SSL
 
 # Optional – timezone consistency
 CELERY_TIMEZONE = "America/Toronto"
 CELERY_ENABLE_UTC = False
-
-
 
 
 
