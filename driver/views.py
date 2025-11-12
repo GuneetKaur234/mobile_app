@@ -17,6 +17,7 @@ import json
 import requests
 from decimal import Decimal
 
+
 from .models import (
     DriverProfile,
     DriverLoadInfo,
@@ -30,6 +31,7 @@ from django.utils import timezone
 import pytz
 from email.utils import make_msgid
 import uuid
+import traceback
 
 from .tasks import send_pickup_or_delivery_email
 
@@ -854,10 +856,13 @@ def send_email_api(request, load_id, include_pod, email_type):
             "load_data": {label.lower().replace(" ", "_"): value for label, value in rows}
         }, status=200)
 
-    except DriverLoadInfo.DoesNotExist:
-        return Response({"error": "Load info not found"}, status=404)
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
+       except DriverLoadInfo.DoesNotExist:
+            print("❌ EMAIL ERROR: Load info not found for ID", load_id)
+            return Response({"error": "Load info not found"}, status=404)
+        except Exception as e:
+            print("❌ EMAIL SEND FAILED:", str(e))
+            print(traceback.format_exc())  # full stack trace appears in Log Stream
+            return Response({"error": str(e)}, status=500)
 
 # ----------------------------
 # GET DRIVER PROFILE
@@ -1064,6 +1069,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
