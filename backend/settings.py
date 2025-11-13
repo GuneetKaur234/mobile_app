@@ -165,19 +165,10 @@ REDIS_USERNAME = "default"
 CELERY_BROKER_URL = f"rediss://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# SSL settings for Azure Premium Redis
-REDIS_SSL_OPTIONS = {
-    "ssl_cert_reqs": "required",  # Must be one of: 'required', 'optional', 'none'
-}
-
-CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
-CELERY_RESULT_BACKEND_USE_SSL = REDIS_SSL_OPTIONS
-
 CELERY_TIMEZONE = "America/Toronto"
 CELERY_ENABLE_UTC = False
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes for large PDF tasks
-
+CELERY_TASK_TIME_LIMIT = 30 * 60
 
 # ----------------------------
 # Logging Configuration
@@ -217,6 +208,7 @@ LOGGING = {
         },
     },
 }
+
 
 
 
