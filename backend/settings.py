@@ -183,8 +183,11 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 # ----------------------------
 import logging
 
-# Ensure log directory exists
-LOG_DIR = "/home/site/wwwroot"
+if os.access("/home/site/wwwroot", os.W_OK):
+    LOG_DIR = "/home/site/wwwroot"
+else:
+    LOG_DIR = "/tmp"
+
 os.makedirs(LOG_DIR, exist_ok=True)
 
 LOGGING = {
@@ -213,6 +216,7 @@ LOGGING = {
         },
     },
 }
+
 
 
 
