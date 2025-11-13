@@ -1,9 +1,8 @@
 import os
 from celery import Celery
+import ssl
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
-
-import ssl
 
 app = Celery("backend")
 
@@ -15,9 +14,11 @@ REDIS_USERNAME = "default"
 CELERY_BROKER_URL = f"rediss://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# Celery requires ssl_cert_reqs as a string, not ssl.CERT_REQUIRED
+# Correct SSL options: use ssl.CERT_REQUIRED constant
 REDIS_SSL_OPTIONS = {
-    "ssl_cert_reqs": "required"  # Must be 'required', 'optional', or 'none'
+    "ssl_cert_reqs": ssl.CERT_REQUIRED,  # ✅ must be ssl.CERT_REQUIRED / CERT_OPTIONAL / CERT_NONE
+    # Optional if your CA certs are custom
+    # "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt",
 }
 
 app.conf.update(
