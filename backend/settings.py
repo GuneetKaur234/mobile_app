@@ -167,7 +167,7 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 # SSL settings for Azure Premium Redis
 REDIS_SSL_OPTIONS = {
-    "ssl_cert_reqs": ssl.CERT_REQUIRED,  # verify the server certificate
+    "ssl_cert_reqs": "required",  # Must be one of: 'required', 'optional', 'none'
 }
 
 CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
@@ -217,6 +217,7 @@ LOGGING = {
         },
     },
 }
+
 
 
 
