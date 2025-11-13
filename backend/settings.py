@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ----------------------------
 SECRET_KEY = 'django-insecure-$j056hcp9i!94ebl_v=vf%p_fkjyxltibcmi16z2+(6&tz^!6a'
 DEBUG = False
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2','mobile-app-gpehf7f5c4h9cre6.canadacentral-01.azurewebsites.net']  # Android emulator
+ALLOWED_HOSTS = ['localhost', '169.254.130.2', '127.0.0.1', '10.0.2.2','mobile-app-gpehf7f5c4h9cre6.canadacentral-01.azurewebsites.net']  # Android emulator
 
 CSRF_TRUSTED_ORIGINS = [
     "https://mobile-app-gpehf7f5c4h9cre6.canadacentral-01.azurewebsites.net"
@@ -165,17 +165,18 @@ REDIS_USERNAME = "default"
 CELERY_BROKER_URL = f"rediss://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
+# SSL settings for Azure Premium Redis
 REDIS_SSL_OPTIONS = {
-    "ssl_cert_reqs": ssl.CERT_REQUIRED
+    "ssl_cert_reqs": ssl.CERT_REQUIRED,  # verify the server certificate
 }
 
-CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
-CELERY_RESULT_BACKEND_USE_SSL = REDIS_SSL_OPTIONS
+CELERY_BROKER_USE_SSL = [REDIS_SSL_OPTIONS]
+CELERY_RESULT_BACKEND_USE_SSL = [REDIS_SSL_OPTIONS]
 
 CELERY_TIMEZONE = "America/Toronto"
 CELERY_ENABLE_UTC = False
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes for large PDF tasks
 
 
 # ----------------------------
@@ -216,6 +217,7 @@ LOGGING = {
         },
     },
 }
+
 
 
 
