@@ -183,6 +183,10 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 # ----------------------------
 import logging
 
+# Ensure log directory exists
+LOG_DIR = "/home/site/wwwroot"
+os.makedirs(LOG_DIR, exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -190,7 +194,7 @@ LOGGING = {
         "file": {
             "level": "ERROR",
             "class": "logging.FileHandler",
-            "filename": "/home/site/wwwroot/django_error.log",
+            "filename": os.path.join(LOG_DIR, "django_error.log"),
         },
         "console": {
             "class": "logging.StreamHandler",
@@ -202,13 +206,14 @@ LOGGING = {
             "level": "ERROR",
             "propagate": True,
         },
-        "driver": {  # capture errors from your app too
+        "driver": {
             "handlers": ["file", "console"],
             "level": "ERROR",
             "propagate": True,
         },
     },
 }
+
 
 
 
