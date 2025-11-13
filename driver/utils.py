@@ -5,10 +5,10 @@ from PIL import Image
 from django.core.files.base import ContentFile
 import re
 
-def generate_load_pdf(load, include_pod=True):
+def generate_load_pdf(load, include_pod=True, max_image_width=1200, max_image_height=1600, jpeg_quality=70):
     """
-    Generate a single PDF containing all photos (and optionally PODs) of a DriverLoadInfo.
-    Works with local or cloud storage and handles PNG/JPG images safely.
+    Generate an optimized PDF containing all photos (and optionally PODs) of a DriverLoadInfo.
+    Images are resized and compressed to reduce PDF size.
     """
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
@@ -28,19 +28,25 @@ def generate_load_pdf(load, include_pod=True):
             # Open image safely from any storage backend
             photo.image.open()
             img = Image.open(photo.image)
-            img = img.convert("RGB")  # Ensure compatibility with PDF
+            img = img.convert("RGB")  # Ensure PDF compatibility
+
+            # Resize if too large
+            img.thumbnail((max_image_width, max_image_height), Image.LANCZOS)
+
+            # Save compressed version to BytesIO
+            img_buffer = BytesIO()
+            img.save(img_buffer, format="JPEG", quality=jpeg_quality)
+            img_buffer.seek(0)
 
             img_width, img_height = img.size
-
-            # Scale image to fit page while preserving aspect ratio
-            scale = min(page_width / img_width, page_height / img_height) * 0.95  # 5% margin
+            scale = min(page_width / img_width, page_height / img_height) * 0.95
             img_width_scaled = img_width * scale
             img_height_scaled = img_height * scale
             x = (page_width - img_width_scaled) / 2
             y = (page_height - img_height_scaled) / 2
 
-            # Draw image onto PDF page
-            c.drawInlineImage(img, x, y, img_width_scaled, img_height_scaled)
+            # Draw image onto PDF
+            c.drawInlineImage(img_buffer, x, y, img_width_scaled, img_height_scaled)
             c.showPage()
 
             img.close()
@@ -51,7 +57,6 @@ def generate_load_pdf(load, include_pod=True):
     c.save()
     buffer.seek(0)
 
-    # Sanitize load_number for filename
     safe_load_number = re.sub(r'[^\w\-]', '_', load.load_number or "load")
     pdf_file = ContentFile(buffer.read(), name=f"{safe_load_number}_all_photos.pdf")
     print(f"[DEBUG] PDF generated successfully: {pdf_file.name}, size: {pdf_file.size} bytes")
