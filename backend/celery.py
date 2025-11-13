@@ -1,11 +1,12 @@
 import os
-from celery import Celery
 import ssl
+from celery import Celery
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 
 app = Celery("backend")
 
+# Redis (Azure)
 REDIS_HOST = os.getenv("REDIS_HOST", "driverapp.redis.cache.windows.net")
 REDIS_PORT = os.getenv("REDIS_PORT", "6380")
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
@@ -14,11 +15,10 @@ REDIS_USERNAME = "default"
 CELERY_BROKER_URL = f"rediss://{REDIS_USERNAME}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
-# Correct SSL options: use ssl.CERT_REQUIRED constant
+# ✅ Proper SSL settings for Azure Redis
 REDIS_SSL_OPTIONS = {
-    "ssl_cert_reqs": ssl.CERT_REQUIRED,  # ✅ must be ssl.CERT_REQUIRED / CERT_OPTIONAL / CERT_NONE
-    # Optional if your CA certs are custom
-    # "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt",
+    "ssl_cert_reqs": ssl.CERT_REQUIRED,
+    "ssl_ca_certs": "/etc/ssl/certs/ca-certificates.crt",  # 👈 Required on Azure
 }
 
 app.conf.update(
@@ -27,7 +27,7 @@ app.conf.update(
     broker_use_ssl=REDIS_SSL_OPTIONS,
     result_backend_use_ssl=REDIS_SSL_OPTIONS,
     task_track_started=True,
-    task_time_limit=30*60,
+    task_time_limit=30 * 60,
     timezone="America/Toronto",
     enable_utc=False,
 )
