@@ -10,9 +10,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .utils import generate_load_pdf
-from django.utils import timezone
-
 import json
 import requests
 from decimal import Decimal
@@ -791,6 +788,12 @@ def send_email_api(request, load_id, include_pod, email_type):
             f"</tr>"
             for label, value in rows
         ])
+
+        # Build the download URL
+        download_url = f"https://mobile-app-gpehf7f5c4h9cre6.canadacentral-01.azurewebsites.net/admin/driver/driverloadinfo/{load.id}/download/"
+
+        
+        
         html_body = f"""
         <html>
         <body>
@@ -806,12 +809,19 @@ def send_email_api(request, load_id, include_pod, email_type):
                     {html_rows}
                 </tbody>
             </table>
+
+                <!-- Download button -->
+            <div style='margin-top: 20px; text-align: center;'>
+                <a href='{download_url}' 
+                   style='display: inline-block; padding: 12px 24px; font-size: 16px; color: #fff; background-color: #2E86C1; text-decoration: none; border-radius: 6px;'>
+                   Download {email_type} PDF
+                </a>
+            </div>
+
+            
         </body>
         </html>
         """
-
-        # Generate PDF (existing function)
-        pdf_file = generate_load_pdf(load, include_pod=include_pod)
 
         # Send email
         email = EmailMessage(
@@ -820,10 +830,7 @@ def send_email_api(request, load_id, include_pod, email_type):
             to=recipient_emails
         )
         email.content_subtype = "html"
-
-        pdf_file.seek(0)
-        email.attach(pdf_file.name, pdf_file.read(), 'application/pdf')
-
+        
         # ---------------------------
         # Gmail Threading Enhancement
         # ---------------------------
@@ -846,8 +853,10 @@ def send_email_api(request, load_id, include_pod, email_type):
             "In-Reply-To": load.email_thread_id,
             "References": load.email_thread_id,
         }
+        
         # Send email once
         email.send()
+
 
 
         return Response({
@@ -1069,6 +1078,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
