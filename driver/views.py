@@ -33,7 +33,7 @@ from email.utils import make_msgid
 import uuid
 import traceback
 
-from .tasks import send_pickup_or_delivery_email
+
 
 
 # ----------------------------
@@ -686,18 +686,18 @@ def get_customers_for_driver_api(request):
 def send_pickup_email_api(request, load_id):
     if not load_id:
         return Response({"error": "load_id is required"}, status=400)
-    
-    send_pickup_or_delivery_email.delay(load_id, "pickup")
-    return Response({"message": "Pickup email queued for sending"}, status=202)
+
+    # Call directly (no Celery)
+    return send_email_api(request, load_id, include_pod=False, email_type="pickup")
 
 
 @api_view(['POST'])
 def send_delivery_email_api(request, load_id):
     if not load_id:
         return Response({"error": "load_id is required"}, status=400)
-    
-    send_pickup_or_delivery_email.delay(load_id, "delivery")
-    return Response({"message": "Delivery email queued for sending"}, status=202)
+
+    # Call directly (no Celery)
+    return send_email_api(request, load_id, include_pod=True, email_type="delivery")
 
 
 def send_email_api(request, load_id, include_pod, email_type):
@@ -1069,6 +1069,7 @@ def create_new_driver_load_api(request):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
 
 
 
