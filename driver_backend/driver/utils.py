@@ -11,7 +11,12 @@ def generate_load_pdf(load, include_pod=True):
     """
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+    PAGE_WIDTH, PAGE_HEIGHT = A4
+
+    MARGIN = 50  # points (~0.7 inch)
+    usable_width = PAGE_WIDTH - 2 * MARGIN
+    usable_height = PAGE_HEIGHT - 2 * MARGIN
+    TEXT_PADDING = 15
 
     photos = load.photos.all().order_by('photo_type')
     if not include_pod:
@@ -26,15 +31,18 @@ def generate_load_pdf(load, include_pod=True):
             img = Image.open(photo.image.path)
             img_width, img_height = img.size
 
-            # scale image to fit page
-            scale = min(width / img_width, height / img_height)
-            img_width *= scale
-            img_height *= scale
-            x = (width - img_width) / 2
-            y = (height - img_height) / 2
+            # Scale image to fit within margins
+            scale = min(usable_width / img_width, usable_height / img_height)
+            img_width_scaled = img_width * scale
+            img_height_scaled = img_height * scale
+
+            # Center image within margins
+            x = MARGIN + (usable_width - img_width_scaled) / 2
+            y = MARGIN + (usable_height - img_height_scaled) / 2
 
             c.drawInlineImage(photo.image.path, x, y, img_width, img_height)
             c.showPage()
+            
         except Exception as e:
             print(f"[DEBUG] Error adding {photo.image.name}: {e}")
 
@@ -43,3 +51,4 @@ def generate_load_pdf(load, include_pod=True):
     pdf_file = ContentFile(buffer.read(), name=f"{load.load_number}_all_photos.pdf")
     print(f"[DEBUG] PDF generated successfully: {pdf_file.name}, size: {pdf_file.size} bytes")
     return pdf_file
+
