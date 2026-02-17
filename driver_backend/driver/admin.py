@@ -224,25 +224,33 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
 
         # Images
         photos = DriverLoadPhoto.objects.filter(load=load)
+        MARGIN = 50
+        HEADER_HEIGHT = 30
         for photo in photos:
             p.setFont("Helvetica-Bold", 14)
-            p.drawString(50, height-50, safe_str(photo.photo_type))
+            header_y = A4[1] - MARGIN - 15
+            p.drawString(MARGIN, header_y, safe_str(photo.photo_type))
+            
             if photo.image:
                 try:
                     img = Image(photo.image.path)
-                    max_width = width - 100
-                    max_height = height - 100
-                    aspect = img.imageWidth / img.imageHeight
-                    if max_width / max_height > aspect:
-                        img.drawHeight = max_height
-                        img.drawWidth = max_height * aspect
-                    else:
-                        img.drawWidth = max_width
-                        img.drawHeight = max_width / aspect
-                    img.wrapOn(p, width, height)
-                    img.drawOn(p, 50, height - 50 - img.drawHeight)
+                    img_width, img_height = img.size
+
+                    # Usable space (exclude margins + header text)
+                    max_width = A4[0] - 2 * MARGIN
+                    max_height = A4[1] - 2 * MARGIN - HEADER_HEIGHT
+        
+                    # Scale image while preserving aspect ratio
+                    scale = min(max_width / img_width, max_height / img_height)
+                    draw_width = img_width * scale
+                    draw_height = img_height * scale
+        
+                    x = MARGIN + (max_width - draw_width) / 2
+                    y = MARGIN + (max_height - draw_height) / 2
+        
+                    p.drawInlineImage(img, x, y, draw_width, draw_height)
                 except:
-                    p.drawString(50, height - 100, f"Cannot load image {safe_str(photo.image.name)}")
+                    p.drawString(MARGIN, MARGIN, f"Cannot load image {safe_str(photo.image.name)}")
             p.showPage()
 
         p.save()
@@ -283,3 +291,4 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
