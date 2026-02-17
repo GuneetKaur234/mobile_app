@@ -14,9 +14,7 @@ def generate_load_pdf(load, include_pod=True):
     PAGE_WIDTH, PAGE_HEIGHT = A4
 
     MARGIN = 50  # points (~0.7 inch)
-    usable_width = PAGE_WIDTH - 2 * MARGIN
-    usable_height = PAGE_HEIGHT - 2 * MARGIN
-    TEXT_PADDING = 15
+    HEADER_HEIGHT = 30
 
     photos = load.photos.all().order_by('photo_type')
     if not include_pod:
@@ -30,6 +28,9 @@ def generate_load_pdf(load, include_pod=True):
             print(f"[DEBUG] Processing photo {idx}: {photo.photo_type}, path: {photo.image.path}")
             img = Image.open(photo.image.path)
             img_width, img_height = img.size
+
+            usable_width = PAGE_WIDTH - 2 * MARGIN
+            usable_height = PAGE_HEIGHT - 2 * MARGIN - HEADER_HEIGHT
 
             # Scale image to fit within margins
             scale = min(usable_width / img_width, usable_height / img_height)
@@ -51,4 +52,5 @@ def generate_load_pdf(load, include_pod=True):
     pdf_file = ContentFile(buffer.read(), name=f"{load.load_number}_all_photos.pdf")
     print(f"[DEBUG] PDF generated successfully: {pdf_file.name}, size: {pdf_file.size} bytes")
     return pdf_file
+
 
