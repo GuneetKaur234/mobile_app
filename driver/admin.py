@@ -257,8 +257,11 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         photos = DriverLoadPhoto.objects.filter(load=load)
         for photo in photos:
             top_margin = height - 50
+            
             p.setFont("Helvetica-Bold", 14)
-            title_text = safe_str(photo.photo_type)
+            
+            raw_type = safe_str(photo.photo_type)
+            title_text = raw_type.replace("_", " ").title()
             p.drawString(50, top_margin, title_text)
             photo_file = photo.resized_image if photo.resized_image else photo.image
             if photo_file:
@@ -329,4 +332,5 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
