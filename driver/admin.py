@@ -256,8 +256,10 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         # Images
         photos = DriverLoadPhoto.objects.filter(load=load)
         for photo in photos:
+            top_margin = height - 50
             p.setFont("Helvetica-Bold", 14)
-            p.drawString(50, height-50, safe_str(photo.photo_type))
+            title_text = safe_str(photo.photo_type)
+            p.drawString(50, top_margin, title_text)
             photo_file = photo.resized_image if photo.resized_image else photo.image
             if photo_file:
                 try:
@@ -265,13 +267,23 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                     if pil_img:
                         pil_img = pil_img.convert('RGB')
                         max_width = width - 100
-                        max_height = height - 100
+                        max_height = height - 150
                         pil_img.thumbnail((max_width, max_height), PILImage.LANCZOS)
                         pil_img.save(tmp_path)
 
                         rl_img = RLImage(tmp_path)
                         rl_img.wrapOn(p, width, height)
-                        rl_img.drawOn(p, 50, height - 50 - rl_img.drawHeight)
+                        # 🔥 CRITICAL FIX: dynamic Y position
+                        image_y = top_margin - 30 - rl_img.drawHeight
+        
+                        # Safety guard (never go off page)
+                        if image_y < 50:
+                            scale_factor = (height - 200) / rl_img.drawHeight
+                            rl_img.drawWidth *= scale_factor
+                            rl_img.drawHeight *= scale_factor
+                            image_y = top_margin - 30 - rl_img.drawHeight
+        
+                        rl_img.drawOn(p, 50, image_y)
                         os.unlink(tmp_path)
                     else:
                         p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}")
@@ -317,3 +329,4 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
