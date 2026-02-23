@@ -183,7 +183,8 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         p = canvas.Canvas(buffer, pagesize=A4)
         width, height = A4
         y_start = height - 50
-
+        page_num = 1  # ✅ page counter
+    
         def safe_str(value):
             if callable(value):
                 try:
@@ -191,23 +192,57 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                 except:
                     return "-"
             return str(value) if value else "-"
-
+    
+        # ✅ footer helper (OUTSIDE loops)
+        def draw_page_footer(canvas_obj, page_num):
+            canvas_obj.setFont("Helvetica", 8)
+            canvas_obj.setStrokeColor(colors.lightgrey)
+            canvas_obj.line(50, 35, width - 50, 35)
+            canvas_obj.drawString(50, 20, "Created by FOH")
+            canvas_obj.drawRightString(width - 50, 20, f"Page {page_num}")
+    
+        # -----------------------------
+        # Header
+        # -----------------------------
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(50, height - 30, safe_str(load.driver.company))
+    
+        p.setFont("Helvetica", 9)
+        p.drawRightString(
+            width - 50,
+            height - 30,
+            f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+        )
+    
+        # -----------------------------
         # Title
+        # -----------------------------
         p.setFont("Helvetica-Bold", 18)
-        p.drawString(50, y_start, f"Load Report (Pickup Number: {safe_str(load.pickup_number)})")
-        p.line(50, y_start-5, width-50, y_start-5)
+        p.drawCentredString(
+            width / 2,
+            y_start,
+            f"Load Report (Pickup Number: {safe_str(load.pickup_number)})"
+        )
+    
+        p.setStrokeColor(colors.grey)
+        p.line(50, y_start - 5, width - 50, y_start - 5)
         y_start -= 40
-
+    
+        # -----------------------------
+        # Styles
+        # -----------------------------
         styles = getSampleStyleSheet()
         normal_style = styles['Normal']
         normal_style.fontSize = 10
         normal_style.leading = 12
-
+    
         est = pytz.timezone('America/New_York')
         pickup_dt = load.pickup_datetime.astimezone(est) if load.pickup_datetime else "-"
         delivery_dt = load.delivery_datetime.astimezone(est) if load.delivery_datetime else "-"
-
-        # Base data
+    
+        # -----------------------------
+        # Table Data
+        # -----------------------------
         data = [
             ['Field', 'Value'],
             ['Driver', Paragraph(f"{safe_str(getattr(load.driver, 'name', '-'))} ({safe_str(getattr(load.driver, 'company', '-'))})", normal_style)],
@@ -226,7 +261,7 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
             ['Equipment Type', Paragraph(safe_str(load.equipment_type), normal_style)],
             ['Status', Paragraph(safe_str(load.status), normal_style)],
         ]
-
+    
         if getattr(load, 'equipment_type', '').lower() == 'reefer':
             data.extend([
                 ['Reefer Pre Cool', Paragraph(safe_str(load.reefer_pre_cool), normal_style)],
@@ -234,77 +269,108 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                 ['Reefer Temp (BOL)', Paragraph(safe_str(load.reefer_temp_bol), normal_style)],
                 ['Reefer Temp Unit', Paragraph(safe_str(load.reefer_temp_unit), normal_style)],
             ])
-
-        usable_width = width - 100  # 50 left + 50 right
-        col_widths = [6*cm, usable_width - 6*cm]
-
+    
+        # -----------------------------
+        # Table
+        # -----------------------------
+        usable_width = width - 100
+        col_widths = [6 * cm, usable_width - 6 * cm]
+    
         table = Table(data, colWidths=col_widths, hAlign='LEFT')
         table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#4F81BD')),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0,0), (-1,-1), 10),
-            ('BOTTOMPADDING', (0,0), (-1,0), 6),
-            ('BACKGROUND', (0,1), (-1,-1), colors.whitesmoke),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.grey)
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
-
+    
         table.wrapOn(p, usable_width, height)
         table.drawOn(p, 50, y_start - table._height)
+    
+        # ✅ footer for first page
+        draw_page_footer(p, page_num)
+        page_num += 1
         p.showPage()
-
+    
+        # -----------------------------
         # Images
+        # -----------------------------
         photos = DriverLoadPhoto.objects.filter(load=load)
+    
         for photo in photos:
             top_margin = height - 50
-            
+    
             p.setFont("Helvetica-Bold", 14)
-            
+    
             raw_type = safe_str(photo.photo_type).lower()
-
-            PHOTO_LABELS = {
-                "pod": "POD",
-                "bol": "BOL",
-            }
-            
-            title_text = PHOTO_LABELS.get(
-                raw_type,
-                raw_type.replace("_", " ").title()
-            )
-            
+            PHOTO_LABELS = {"pod": "POD", "bol": "BOL"}
+            title_text = PHOTO_LABELS.get(raw_type, raw_type.replace("_", " ").title())
+    
+            # ✅ title then line (correct order)
             p.drawString(50, top_margin, title_text)
+            p.setStrokeColor(colors.grey)
+            p.line(50, top_margin - 5, width - 50, top_margin - 5)
+    
             photo_file = photo.resized_image if photo.resized_image else photo.image
+    
             if photo_file:
                 try:
                     pil_img, tmp_path = self.get_pil_image_from_storage(photo_file)
+    
                     if pil_img:
                         pil_img = pil_img.convert('RGB')
                         max_width = width - 100
                         max_height = height - 150
                         pil_img.thumbnail((max_width, max_height), PILImage.LANCZOS)
                         pil_img.save(tmp_path)
-
+    
                         rl_img = RLImage(tmp_path)
                         rl_img.wrapOn(p, width, height)
-                        # 🔥 CRITICAL FIX: dynamic Y position
+    
                         image_y = top_margin - 30 - rl_img.drawHeight
-        
-                        # Safety guard (never go off page)
+    
                         if image_y < 50:
                             scale_factor = (height - 200) / rl_img.drawHeight
                             rl_img.drawWidth *= scale_factor
                             rl_img.drawHeight *= scale_factor
                             image_y = top_margin - 30 - rl_img.drawHeight
-        
+    
+                        # border
+                        p.setStrokeColor(colors.lightgrey)
+                        p.rect(
+                            45,
+                            image_y - 5,
+                            rl_img.drawWidth + 10,
+                            rl_img.drawHeight + 10,
+                            stroke=1,
+                            fill=0
+                        )
+    
                         rl_img.drawOn(p, 50, image_y)
                         os.unlink(tmp_path)
+    
                     else:
                         p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}")
+    
                 except Exception as e:
                     p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}: {e}")
+    
+            # ✅ footer for each image page
+            draw_page_footer(p, page_num)
+            page_num += 1
             p.showPage()
-
+    
+        # -----------------------------
+        # Finalize
+        # -----------------------------
         p.save()
         buffer.seek(0)
         return HttpResponse(buffer, content_type='application/pdf')
@@ -343,6 +409,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
