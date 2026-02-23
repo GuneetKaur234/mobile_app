@@ -20,6 +20,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 
 import pytz
+from django.utils import timezone
 
 from PIL import Image as PILImage
 import os
@@ -409,6 +410,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
