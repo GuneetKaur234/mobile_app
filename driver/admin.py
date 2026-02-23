@@ -235,7 +235,8 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                 ['Reefer Temp Unit', Paragraph(safe_str(load.reefer_temp_unit), normal_style)],
             ])
 
-        col_widths = [5*cm, width - 7*cm]
+        usable_width = width - 100  # 50 left + 50 right
+        col_widths = [6*cm, usable_width - 6*cm]
 
         table = Table(data, colWidths=col_widths, hAlign='LEFT')
         table.setStyle(TableStyle([
@@ -249,7 +250,7 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
             ('GRID', (0,0), (-1,-1), 0.5, colors.grey)
         ]))
 
-        table.wrapOn(p, width-100, height)
+        table.wrapOn(p, usable_width, height)
         table.drawOn(p, 50, y_start - table._height)
         p.showPage()
 
@@ -342,6 +343,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
