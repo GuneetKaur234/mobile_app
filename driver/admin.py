@@ -202,18 +202,6 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
             canvas_obj.drawString(50, 20, "Created by FOH")
             canvas_obj.drawRightString(width - 50, 20, f"Page {page_num}")
     
-        # -----------------------------
-        # Header
-        # -----------------------------
-        p.setFont("Helvetica-Bold", 11)
-        p.drawString(50, height - 30, safe_str(load.driver.company))
-    
-        p.setFont("Helvetica", 9)
-        p.drawRightString(
-            width - 50,
-            height - 30,
-            f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M')}"
-        )
     
         # -----------------------------
         # Title
@@ -410,6 +398,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
