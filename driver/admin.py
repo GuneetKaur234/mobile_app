@@ -183,8 +183,7 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         buffer = io.BytesIO()
         p = canvas.Canvas(buffer, pagesize=A4)
         width, height = A4
-        y_start = height - 50
-        page_num = 1  # ✅ page counter
+        page_num = 1
     
         def safe_str(value):
             if callable(value):
@@ -194,47 +193,90 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                     return "-"
             return str(value) if value else "-"
     
-        # ✅ footer helper (OUTSIDE loops)
+        # ✅ footer helper
         def draw_page_footer(canvas_obj, page_num):
             canvas_obj.setFont("Helvetica", 8)
             canvas_obj.setStrokeColor(colors.lightgrey)
             canvas_obj.line(50, 35, width - 50, 35)
+            canvas_obj.setFillColor(colors.grey)
             canvas_obj.drawString(50, 20, "Created by FOH")
             canvas_obj.drawRightString(width - 50, 20, f"Page {page_num}")
+            canvas_obj.setFillColor(colors.black)
     
+        # =========================================================
+        # 🎨 PREMIUM HEADER BAR
+        # =========================================================
+        p.setFillColor(colors.HexColor("#0B3D91"))
+        p.rect(0, height - 45, width, 45, fill=1, stroke=0)
     
-        # -----------------------------
-        # Title
-        # -----------------------------
-        p.setFont("Helvetica-Bold", 18)
-        p.drawCentredString(
-            width / 2,
-            y_start,
-            f"Load Report (Pickup Number: {safe_str(load.pickup_number)})"
+        p.setFillColor(colors.white)
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(50, height - 28, safe_str(load.driver.company))
+    
+        p.setFont("Helvetica", 9)
+        p.drawRightString(
+            width - 50,
+            height - 28,
+            f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M')}"
         )
     
-        p.setStrokeColor(colors.grey)
-        p.line(50, y_start - 5, width - 50, y_start - 5)
-        y_start -= 40
+        p.setFillColor(colors.black)
     
-        # -----------------------------
+        # =========================================================
+        # 🧾 TITLE (premium hierarchy)
+        # =========================================================
+        y_start = height - 80
+    
+        p.setFont("Helvetica-Bold", 20)
+        p.drawCentredString(width / 2, y_start, "LOAD REPORT")
+    
+        p.setFont("Helvetica", 11)
+        p.setFillColor(colors.grey)
+        p.drawCentredString(
+            width / 2,
+            y_start - 18,
+            f"Pickup #: {safe_str(load.pickup_number)}"
+        )
+    
+        p.setFillColor(colors.black)
+        p.setStrokeColor(colors.lightgrey)
+        p.line(50, y_start - 28, width - 50, y_start - 28)
+    
+        y_start -= 60
+    
+        # =========================================================
+        # ⚡ SUMMARY STRIP (looks very professional)
+        # =========================================================
+        p.setFillColor(colors.whitesmoke)
+        p.rect(50, y_start - 25, width - 100, 22, fill=1, stroke=0)
+    
+        p.setFillColor(colors.black)
+        p.setFont("Helvetica-Bold", 9)
+    
+        p.drawString(60, y_start - 18, f"Driver: {safe_str(getattr(load.driver,'name','-'))}")
+        p.drawString(260, y_start - 18, f"Truck: {safe_str(load.truck_number)}")
+        p.drawString(420, y_start - 18, f"Trailer: {safe_str(load.trailer_number)}")
+    
+        y_start -= 45
+    
+        # =========================================================
         # Styles
-        # -----------------------------
+        # =========================================================
         styles = getSampleStyleSheet()
         normal_style = styles['Normal']
-        normal_style.fontSize = 10
+        normal_style.fontSize = 9
         normal_style.leading = 12
     
         est = pytz.timezone('America/New_York')
         pickup_dt = load.pickup_datetime.astimezone(est) if load.pickup_datetime else "-"
         delivery_dt = load.delivery_datetime.astimezone(est) if load.delivery_datetime else "-"
     
-        # -----------------------------
+        # =========================================================
         # Table Data
-        # -----------------------------
+        # =========================================================
         data = [
             ['Field', 'Value'],
-            ['Driver', Paragraph(f"{safe_str(getattr(load.driver, 'name', '-'))} ({safe_str(getattr(load.driver, 'company', '-'))})", normal_style)],
+            ['Driver', Paragraph(f"{safe_str(getattr(load.driver,'name','-'))} ({safe_str(getattr(load.driver,'company','-'))})", normal_style)],
             ['Truck Number', Paragraph(safe_str(load.truck_number), normal_style)],
             ['Trailer Number', Paragraph(safe_str(load.trailer_number), normal_style)],
             ['Customer', Paragraph(safe_str(load.customer_name), normal_style)],
@@ -259,32 +301,38 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
                 ['Reefer Temp Unit', Paragraph(safe_str(load.reefer_temp_unit), normal_style)],
             ])
     
-        # -----------------------------
-        # Table
-        # -----------------------------
+        # =========================================================
+        # 🧱 MODERN TABLE
+        # =========================================================
         usable_width = width - 100
         col_widths = [6 * cm, usable_width - 6 * cm]
     
         table = Table(data, colWidths=col_widths, hAlign='LEFT')
         table.setStyle(TableStyle([
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
-            ('LEFTPADDING', (0, 0), (-1, -1), 6),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0B3D91')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+    
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+    
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+    
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1),
+             [colors.white, colors.HexColor('#F7F9FC')]),
+    
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+    
+            ('GRID', (0, 0), (-1, -1), 0.25, colors.lightgrey),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
     
         table.wrapOn(p, usable_width, height)
         table.drawOn(p, 50, y_start - table._height)
     
-        # ✅ footer for first page
+        # footer first page
         draw_page_footer(p, page_num)
         page_num += 1
         p.showPage()
@@ -398,6 +446,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
