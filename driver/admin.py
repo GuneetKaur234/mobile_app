@@ -341,66 +341,95 @@ class DriverLoadInfoAdmin(ImportExportModelAdmin):
         # Images
         # -----------------------------
         photos = DriverLoadPhoto.objects.filter(load=load)
-    
+
         for photo in photos:
-            top_margin = height - 50
-    
+        
+            # =========================================================
+            # 🎨 SAME PREMIUM HEADER (consistency)
+            # =========================================================
+            p.setFillColor(colors.HexColor("#0B3D91"))
+            p.rect(0, height - 45, width, 45, fill=1, stroke=0)
+        
+            p.setFillColor(colors.white)
             p.setFont("Helvetica-Bold", 14)
-    
+            p.drawString(50, height - 28, safe_str(load.driver.company))
+        
+            p.setFont("Helvetica", 9)
+            p.drawRightString(
+                width - 50,
+                height - 28,
+                f"Generated: {timezone.now().strftime('%Y-%m-%d %H:%M')}"
+            )
+        
+            p.setFillColor(colors.black)
+        
+            # =========================================================
+            # 📸 PHOTO TITLE AREA
+            # =========================================================
+            y_start = height - 80
+        
             raw_type = safe_str(photo.photo_type).lower()
             PHOTO_LABELS = {"pod": "POD", "bol": "BOL"}
-            title_text = PHOTO_LABELS.get(raw_type, raw_type.replace("_", " ").title())
-    
-            # ✅ title then line (correct order)
-            p.drawString(50, top_margin, title_text)
-            p.setStrokeColor(colors.grey)
-            p.line(50, top_margin - 5, width - 50, top_margin - 5)
-    
+            title_text = PHOTO_LABELS.get(
+                raw_type,
+                raw_type.replace("_", " ").title()
+            )
+        
+            p.setFont("Helvetica-Bold", 18)
+            p.drawCentredString(width / 2, y_start, title_text)
+        
+            p.setStrokeColor(colors.lightgrey)
+            p.line(50, y_start - 15, width - 50, y_start - 15)
+        
+            # =========================================================
+            # 🖼 IMAGE (VERTICALLY CENTERED — premium look)
+            # =========================================================
             photo_file = photo.resized_image if photo.resized_image else photo.image
-    
+        
             if photo_file:
                 try:
                     pil_img, tmp_path = self.get_pil_image_from_storage(photo_file)
-    
+        
                     if pil_img:
                         pil_img = pil_img.convert('RGB')
-                        max_width = width - 100
-                        max_height = height - 150
+        
+                        max_width = width - 120
+                        max_height = height - 220
                         pil_img.thumbnail((max_width, max_height), PILImage.LANCZOS)
                         pil_img.save(tmp_path)
-    
+        
                         rl_img = RLImage(tmp_path)
                         rl_img.wrapOn(p, width, height)
-    
-                        image_y = top_margin - 30 - rl_img.drawHeight
-    
-                        if image_y < 50:
-                            scale_factor = (height - 200) / rl_img.drawHeight
-                            rl_img.drawWidth *= scale_factor
-                            rl_img.drawHeight *= scale_factor
-                            image_y = top_margin - 30 - rl_img.drawHeight
-    
-                        # border
+        
+                        # 🔥 TRUE VERTICAL CENTERING
+                        image_y = (height - rl_img.drawHeight) / 2 - 20
+        
+                        # soft border
                         p.setStrokeColor(colors.lightgrey)
                         p.rect(
-                            45,
+                            (width - rl_img.drawWidth) / 2 - 5,
                             image_y - 5,
                             rl_img.drawWidth + 10,
                             rl_img.drawHeight + 10,
                             stroke=1,
                             fill=0
                         )
-    
-                        rl_img.drawOn(p, 50, image_y)
+        
+                        rl_img.drawOn(
+                            p,
+                            (width - rl_img.drawWidth) / 2,
+                            image_y
+                        )
+        
                         os.unlink(tmp_path)
-    
+        
                     else:
                         p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}")
-    
+        
                 except Exception as e:
                     p.drawString(50, height - 100, f"Cannot load image {safe_str(photo_file.name)}: {e}")
-    
-            # ✅ footer for each image page
+        
+            # footer
             draw_page_footer(p, page_num)
             page_num += 1
             p.showPage()
@@ -446,6 +475,7 @@ class DriverLocationAdmin(admin.ModelAdmin):
     def driver_name(self, obj):
         return obj.driver.name if obj.driver else "-"
     driver_name.short_description = "Driver Name"
+
 
 
 
